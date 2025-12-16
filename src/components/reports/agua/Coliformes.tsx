@@ -18,7 +18,7 @@ export function Coliformes() {
           <label key={index} className="flex items-center gap-2">
             <input
               type="radio"
-              {...register("resultados.coliformesOption")}
+              {...register("resultados.coliformes")}
               value={option}
               className="w-4 h-4"
             />

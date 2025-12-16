@@ -4,13 +4,46 @@ import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { useNavigate } from "react-router-dom";
 // import { cn } from "@/lib/utils";
-import type { ReportType } from "@/types/types";
+import type { FullReport, ReportType } from "@/types/types";
+import { fetchWaterReports } from "@/api/reportsApi";
+import { useClients } from "@/hooks/useClients";
+import { useQuery } from "@tanstack/react-query";
+import { formatDate } from "@/hooks/useDate";
 
-const reportTypes: { value: ReportType; label: string }[] = [
+const reportTypes: Array<{ value: ReportType; label: string }> = [
   { value: "agua", label: "Agua" },
   { value: "alimentos", label: "Alimentos" },
   { value: "nutricion", label: "Nutrición Animal" },
 ];
+
+const getEstiloPorResultado = (resultado: string) => {
+  switch (resultado) {
+    case "Potable":
+      return {
+        text: resultado,
+        classname:
+          "inline-flex items-center rounded-full bg-green-50 px-2 py-1 font-medium text-green-700 ring-1 ring-inset ring-green-600/20",
+      };
+    case "Deficiente":
+      return {
+        text: resultado,
+        classname:
+          "inline-flex items-center rounded-full bg-yellow-50 px-2 py-1 font-medium text-yellow-800 ring-1 ring-inset ring-yellow-600/20",
+      };
+    case "No potable":
+      return {
+        text: resultado,
+        classname:
+          "inline-flex items-center rounded-full bg-red-50 px-2 py-1 font-medium text-red-700 ring-1 ring-inset ring-red-600/10",
+      };
+    default:
+      return {
+        text: "Nulo",
+        classname:
+          "inline-flex items-center rounded-full bg-blue-50 px-2 py-1 font-medium text-blue-700 ring-1 ring-inset ring-blue-600/20",
+      };
+  }
+};
 
 export function Reports() {
   const navigate = useNavigate();
@@ -23,9 +56,20 @@ export function Reports() {
     tipo: "" as ReportType | "",
   });
 
+  const { clientsQuery } = useClients();
+
+  const reportsQuery = useQuery<FullReport[]>({
+    queryKey: ["reports", "agua"],
+    queryFn: fetchWaterReports,
+  });
+
+  const getClientName = (clientId: string) => {
+    return clientsQuery.data?.find((c) => c.id === clientId)?.name ?? "—";
+  };
+
   const handleSelectType = (type: ReportType) => {
     setIsMenuOpen(false);
-    
+
     // Navegar según el tipo de informe seleccionado
     switch (type) {
       case "agua":
@@ -205,13 +249,19 @@ export function Reports() {
                   scope="col"
                   className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider"
                 >
+                  Cliente
+                </th>
+                <th
+                  scope="col"
+                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider"
+                >
                   Número
                 </th>
                 <th
                   scope="col"
                   className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider"
                 >
-                  Cliente
+                  Detalle
                 </th>
                 <th
                   scope="col"
@@ -229,7 +279,7 @@ export function Reports() {
                   scope="col"
                   className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider"
                 >
-                  Estado
+                  Resultado
                 </th>
                 <th
                   scope="col"
@@ -240,18 +290,103 @@ export function Reports() {
               </tr>
             </thead>
             <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-              {/* Placeholder para cuando no hay informes */}
-              <tr>
-                <td
-                  colSpan={6}
-                  className="px-6 py-12 text-center text-gray-500 dark:text-gray-400"
-                >
-                  <p className="text-sm">No hay informes generados aún</p>
-                  <p className="text-xs mt-1">
-                    Haz clic en "Nuevo Informe" para crear uno
-                  </p>
-                </td>
-              </tr>
+              {reportsQuery.isLoading ? (
+                <tr>
+                  <td
+                    colSpan={6}
+                    className="px-6 py-12 text-center text-gray-500 dark:text-gray-400"
+                  >
+                    Cargando informes...
+                  </td>
+                </tr>
+              ) : reportsQuery.isError ? (
+                <tr>
+                  <td
+                    colSpan={6}
+                    className="px-6 py-12 text-center text-red-600 dark:text-red-400"
+                  >
+                    Error al cargar informes
+                  </td>
+                </tr>
+              ) : !reportsQuery.data || reportsQuery.data.length === 0 ? (
+                <tr>
+                  <td
+                    colSpan={6}
+                    className="px-6 py-12 text-center text-gray-500 dark:text-gray-400"
+                  >
+                    <p className="text-sm">No hay informes generados aún</p>
+                    <p className="text-xs mt-1">
+                      Haz clic en "Nuevo Informe" para crear uno
+                    </p>
+                  </td>
+                </tr>
+              ) : (
+                reportsQuery.data.map((item) => (
+                  <tr key={item.report.id}>
+                    {/* Cliente */}
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
+                      {getClientName(item.report.client_id)}
+                    </td>
+
+                    {/* Número */}
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
+                      {item.report.report_number ||
+                        item.water.numero_propio ||
+                        item.water.numero_laboratorio ||
+                        "—"}
+                    </td>
+
+                    {/* Detalle */}
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
+                      {item.water.detalle || "—"}
+                    </td>
+
+                    {/* Tipo */}
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
+                      Agua
+                    </td>
+
+                    {/* Fecha */}
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
+                      {item.water.fecha_informe
+                        ? formatDate(item.water.fecha_informe)
+                        : formatDate(item.report.created_at)}
+                    </td>
+
+                    {/* Resultado */}
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
+                      {(() => {
+                        const { text, classname } = getEstiloPorResultado(
+                          item.water.resultado ?? ""
+                        );
+                        return <span className={classname}>{text}</span>;
+                      })()}
+                    </td>
+
+                    {/* Acciones */}
+                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm text-gray-900 dark:text-gray-100">
+                      <button
+                        type="button"
+                        className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 text-xs mr-3"
+                      >
+                        Ver
+                      </button>
+                      <button
+                        type="button"
+                        className="text-gray-600 hover:text-gray-800 dark:text-gray-300 dark:hover:text-gray-100 text-xs"
+                      >
+                        Editar
+                      </button>
+                      <button
+                        type="button"
+                        className="text-red-600 hover:text-red-800 dark:text-red-300 dark:hover:text-red-100 text-xs"
+                      >
+                        Eliminar
+                      </button>
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>
@@ -259,4 +394,3 @@ export function Reports() {
     </div>
   );
 }
-

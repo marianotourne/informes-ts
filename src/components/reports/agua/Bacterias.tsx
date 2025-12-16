@@ -18,15 +18,16 @@ export function Bacterias() {
           <label key={index} className="flex items-center gap-2">
             <input
               type="radio"
-              {...register("resultados.bacteriasOption")}
+              {...register("resultados.bacterias")}
               value={option}
               className="w-4 h-4"
             />
-            <span className="text-sm text-gray-700 dark:text-gray-300">{option}</span>
+            <span className="text-sm text-gray-700 dark:text-gray-300">
+              {option}
+            </span>
           </label>
         ))}
       </div>
     </div>
   );
 }
-

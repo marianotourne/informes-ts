@@ -1,7 +1,6 @@
 import type { Client } from "../types/types";
 import { supabase } from "../utils/supabase";
 
-
 export async function fetchClients(): Promise<Client[]> {
   const { data, error } = await supabase.from("clients").select("*");
 
@@ -10,7 +9,7 @@ export async function fetchClients(): Promise<Client[]> {
     throw new Error(error.message);
   }
 
-  return data ?? [];
+  return (data as Client[]) ?? [];
 }
 
 export async function createClient(newClient: Omit<Client, "id">) {

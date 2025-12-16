@@ -4,8 +4,8 @@ import type { AguaReportFormData } from "@/lib/zodSchemas";
 
 export function Aerobias() {
   const { register, watch } = useFormContext<AguaReportFormData>();
-  const aerobiasOption = watch("resultados.aerobiasOption");
-  const displayInput = aerobiasOption === "custom";
+  const aerobias = watch("resultados.aerobias");
+  const displayInput = aerobias === "custom";
 
   return (
     <div className="flex flex-col mb-3 border-b border-solid border-gray-400 pb-2">
@@ -18,14 +18,14 @@ export function Aerobias() {
         <label className="flex items-center gap-2">
           <input
             type="radio"
-            {...register("resultados.aerobiasOption")}
+            {...register("resultados.aerobias")}
             value="custom"
             className="w-4 h-4"
           />
           {displayInput && (
             <Input
               type="number"
-              {...register("resultados.textOption11")}
+              {...register("resultados.text11")}
               className="w-20 sm:w-24 mr-2"
             />
           )}
@@ -37,7 +37,7 @@ export function Aerobias() {
         <label className="flex items-center gap-2">
           <input
             type="radio"
-            {...register("resultados.aerobiasOption")}
+            {...register("resultados.aerobias")}
             value=">500"
             className="w-4 h-4"
           />
@@ -49,7 +49,7 @@ export function Aerobias() {
         <label className="flex items-center gap-2">
           <input
             type="radio"
-            {...register("resultados.aerobiasOption")}
+            {...register("resultados.aerobias")}
             value="<10"
             className="w-4 h-4"
           />

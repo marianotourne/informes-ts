@@ -21,15 +21,16 @@ export function Escherichia() {
           <label key={option.value} className="flex items-center gap-2">
             <input
               type="radio"
-              {...register("resultados.escherichiaOption")}
+              {...register("resultados.escherichia")}
               value={option.value}
               className="w-4 h-4"
             />
-            <span className="text-sm text-gray-700 dark:text-gray-300">{option.label}</span>
+            <span className="text-sm text-gray-700 dark:text-gray-300">
+              {option.label}
+            </span>
           </label>
         ))}
       </div>
     </div>
   );
 }
-

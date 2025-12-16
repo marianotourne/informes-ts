@@ -1,8 +1,9 @@
-export type Client = {
-    id: number,
-    name: string,
-    companyname?: string, 
+export interface Client {
+  id: number;
+  name: string;
+  companyname?: string;
 }
+
 
 export type ReportType = "agua" | "alimentos" | "nutricion";
 
@@ -50,5 +51,5 @@ export interface Report {
   
   export type FullReport =
   | { type: "agua"; report: Report; water: ReportWater }
-  | { type: "alimentos"; report: Report; food: ReportFood }
-  | { type: "nutricion_animal"; report: Report; animal: ReportAnimalNutrition };
+  // | { type: "alimentos"; report: Report; food: ReportFood }
+  // | { type: "nutricion_animal"; report: Report; animal: ReportAnimalNutrition };

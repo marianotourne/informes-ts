@@ -1,3 +1,4 @@
+// import type { Bacterias } from "@/components/reports/agua/Bacterias";
 import { z } from "zod";
 
 export const clientSchema = z.object({
@@ -19,19 +20,20 @@ export const aguaReportSchema = z.object({
     propio: z.number().int("Debe ser un número entero").min(1, "Debe ser un número positivo"),
   }),
   remitente: z.object({
-    nombre: z.string().min(1, "El nombre es requerido"),
+    // nombre: z.string().min(1, "El nombre es requerido"),
+    id: z.string().uuid(),
     direccion: z.string().optional(),
     fechaRecepcion: z.string().min(1, "La fecha de recepción es requerida"),
     fechaInicio: z.string().min(1, "La fecha de inicio es requerida"),
     detalle: z.string().min(1, "El detalle es requerido"),
   }),
   resultados: z.object({
-    aerobiasOption: z.string().optional(),
-    bacteriasOption: z.string().optional(),
-    coliformesOption: z.string().optional(),
-    escherichiaOption: z.string().optional(),
-    pseudomonaOption: z.string().optional(),
-    textOption11: z.string().optional(),
+    aerobias: z.string().optional(),
+    bacterias: z.string().optional(),
+    coliformes: z.string().optional(),
+    escherichia: z.string().optional(),
+    pseudomona: z.string().optional(),
+    text11: z.string().optional(),
   }),
   conclusiones: z.object({
     resultado: z.string().optional(),
