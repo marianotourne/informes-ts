@@ -32,7 +32,8 @@ const initialValues: AguaReportFormData = {
     coliformes: "",
     escherichia: "",
     pseudomona: "",
-    text11: "",
+    // text11: "",
+    resultado: "",
   },
   conclusiones: {
     resultado: "",

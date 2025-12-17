@@ -1,5 +1,5 @@
 export interface Client {
-  id: number;
+  id: string; // UUID
   name: string;
   companyname?: string;
 }

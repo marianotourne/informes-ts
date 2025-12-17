@@ -10,6 +10,11 @@ import { useClients } from "@/hooks/useClients";
 import { useQuery } from "@tanstack/react-query";
 import { formatDate } from "@/hooks/useDate";
 
+import { usePagination } from "@/hooks/usePagination";
+import { TablePagination } from "@/components/TablePagination";
+
+const PAGE_SIZE = 8;
+
 const reportTypes: Array<{ value: ReportType; label: string }> = [
   { value: "agua", label: "Agua" },
   { value: "alimentos", label: "Alimentos" },
@@ -49,6 +54,7 @@ export function Reports() {
   const navigate = useNavigate();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+
   const [searchFilters, setSearchFilters] = useState({
     client: "",
     fechaDesde: "",
@@ -64,8 +70,22 @@ export function Reports() {
   });
 
   const getClientName = (clientId: string) => {
-    return clientsQuery.data?.find((c) => c.id === clientId)?.name ?? "—";
+    if (!clientId) return "—";
+    const client = clientsQuery.data?.find((c) => c.id === clientId);
+    return client?.name ?? "—";
   };
+
+  const reports = reportsQuery.data ?? [];
+
+  const {
+    currentPage,
+    setCurrentPage,
+    totalPages,
+    paginatedData: paginatedReports,
+  } = usePagination<FullReport>({
+    data: reports,
+    pageSize: PAGE_SIZE,
+  });
 
   const handleSelectType = (type: ReportType) => {
     setIsMenuOpen(false);
@@ -321,7 +341,7 @@ export function Reports() {
                   </td>
                 </tr>
               ) : (
-                reportsQuery.data.map((item) => (
+                paginatedReports.map((item) => (
                   <tr key={item.report.id}>
                     {/* Cliente */}
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
@@ -337,7 +357,7 @@ export function Reports() {
                     </td>
 
                     {/* Detalle */}
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100 w-11">
                       {item.water.detalle || "—"}
                     </td>
 
@@ -391,6 +411,11 @@ export function Reports() {
           </table>
         </div>
       </div>
+      <TablePagination
+        currentPage={currentPage}
+        totalPages={totalPages}
+        onPageChange={setCurrentPage}
+      />
     </div>
   );
 }

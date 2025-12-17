@@ -17,7 +17,7 @@ export function Remitente() {
 
   // Obtener el nombre del cliente seleccionado para mostrar en ClientSelect
   const selectedClientName =
-    clientsQuery.data?.find((c) => String(c.id) === clientId)?.name || "";
+    clientsQuery.data?.find((c) => c.id === clientId)?.name || "";
 
   return (
     <section className="mb-6">
@@ -44,7 +44,7 @@ export function Remitente() {
                   (c) => c.name === value
                 );
                 if (selectedClient) {
-                  setValue("remitente.id", String(selectedClient.id));
+                  setValue("remitente.id", selectedClient.id);
                 }
               }}
               clients={clientsQuery.data || []}

@@ -3,8 +3,8 @@ import { Button } from "./ui/button";
 
 interface Props {
   clients: Client[];
-  onDelete: (id: number) => void;
-  onEdit: (id: number) => void;
+  onDelete: (id: string) => void;
+  onEdit: (id: string) => void;
 }
 
 export function ClientList({ clients, onDelete, onEdit }: Props) {

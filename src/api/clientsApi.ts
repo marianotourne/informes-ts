@@ -27,7 +27,7 @@ export async function createClient(newClient: Omit<Client, "id">) {
   return data;
 }
 
-export async function updateClient(id: number, clientData: Partial<Client>) {
+export async function updateClient(id: string, clientData: Partial<Client>) {
   const { data, error } = await supabase
     .from("clients")
     .update(clientData)
@@ -43,7 +43,7 @@ export async function updateClient(id: number, clientData: Partial<Client>) {
   return data;
 }
 
-export async function deleteClient(id: number) {
+export async function deleteClient(id: string) {
   const { error } = await supabase.from("clients").delete().eq("id", id);
 
   if (error) {

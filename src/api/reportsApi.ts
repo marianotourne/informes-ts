@@ -7,7 +7,7 @@ export async function createAguaReport(form: AguaReportFormData) {
   const { data: report, error: reportError } = await supabase
     .from("reports")
     .insert({
-      // client_id: id de tabla clients
+      // client_id: UUID de tabla clients
       client_id: form.remitente.id,
       // report_type_id: id de tabla report_types (1 = agua)
       report_type_id: 1,

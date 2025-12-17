@@ -28,7 +28,7 @@ export function useClients() {
   });
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, data }: { id: number; data: Partial<Client> }) =>
+    mutationFn: ({ id, data }: { id: string; data: Partial<Client> }) =>
       updateClient(id, data),
     onSuccess: () => {
       toast({ title: "Cliente actualizado" });
@@ -37,7 +37,7 @@ export function useClients() {
   });
 
   const deleteMutation = useMutation({
-    mutationFn: (id: number) => deleteClient(id),
+    mutationFn: (id: string) => deleteClient(id),
     onSuccess: () => {
       toast({ title: "Cliente eliminado" });
       queryClient.invalidateQueries({ queryKey: ["clients"] });
