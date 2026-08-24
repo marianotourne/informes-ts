@@ -17,7 +17,7 @@ export function ClientList({ clients, onDelete, onEdit }: Props) {
         >
           <span>{c.name}</span>
           <div className="flex gap-3">
-            <Button variant="secondary" onClick={() => onEdit(c.id)}>
+            <Button variant="outline" onClick={() => onEdit(c.id)}>
               Editar
             </Button>
             <Button variant="destructive" onClick={() => onDelete(c.id)}>

@@ -1,19 +1,14 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useMemo, useCallback } from "react";
 import { ChevronDown, Search } from "lucide-react";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { useNavigate } from "react-router-dom";
 // import { cn } from "@/lib/utils";
 import type { FullReport, ReportType } from "@/types/types";
-import { fetchWaterReports } from "@/api/reportsApi";
+import { deleteReport, fetchWaterReports } from "@/api/reportsApi";
 import { useClients } from "@/hooks/useClients";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { formatDate } from "@/hooks/useDate";
-
-import { usePagination } from "@/hooks/usePagination";
-import { TablePagination } from "@/components/TablePagination";
-
-const PAGE_SIZE = 8;
 
 const reportTypes: Array<{ value: ReportType; label: string }> = [
   { value: "agua", label: "Agua" },
@@ -50,17 +45,60 @@ const getEstiloPorResultado = (resultado: string) => {
   }
 };
 
+type SearchFilters = {
+  client: string;
+  fechaDesde: string;
+  fechaHasta: string;
+  tipo: ReportType | "";
+};
+
+const emptyFilters: SearchFilters = {
+  client: "",
+  fechaDesde: "",
+  fechaHasta: "",
+  tipo: "",
+};
+
+const getReportDate = (item: FullReport): string => {
+  const raw = item.water.fecha_informe ?? item.report.created_at;
+  return raw.slice(0, 10);
+};
+
+const filterReports = (
+  reports: FullReport[],
+  filters: SearchFilters,
+  getClientName: (clientId: string) => string,
+): FullReport[] => {
+  const clientQuery = filters.client.trim().toLowerCase();
+
+  return reports.filter((item) => {
+    if (clientQuery) {
+      const clientName = getClientName(item.report.client_id).toLowerCase();
+      if (!clientName.includes(clientQuery)) return false;
+    }
+
+    if (filters.tipo) {
+      if (filters.tipo !== item.type) return false;
+    }
+
+    const reportDate = getReportDate(item);
+
+    if (filters.fechaDesde && reportDate < filters.fechaDesde) return false;
+    if (filters.fechaHasta && reportDate > filters.fechaHasta) return false;
+
+    return true;
+  });
+};
+
 export function Reports() {
   const navigate = useNavigate();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
-
-  const [searchFilters, setSearchFilters] = useState({
-    client: "",
-    fechaDesde: "",
-    fechaHasta: "",
-    tipo: "" as ReportType | "",
-  });
+  const [searchFilters, setSearchFilters] =
+    useState<SearchFilters>(emptyFilters);
+  const [appliedFilters, setAppliedFilters] = useState<SearchFilters | null>(
+    null,
+  );
 
   const { clientsQuery } = useClients();
 
@@ -69,23 +107,20 @@ export function Reports() {
     queryFn: fetchWaterReports,
   });
 
-  const getClientName = (clientId: string) => {
-    if (!clientId) return "—";
-    const client = clientsQuery.data?.find((c) => c.id === clientId);
-    return client?.name ?? "—";
-  };
+  // Mapa de clientId -> nombre, se recalcula solo cuando cambian los clientes
+  const clientNameById = useMemo(() => {
+    const map = new Map<string, string>();
+    clientsQuery.data?.forEach((c) => map.set(c.id, c.name));
+    return map;
+  }, [clientsQuery.data]);
 
-  const reports = reportsQuery.data ?? [];
-
-  const {
-    currentPage,
-    setCurrentPage,
-    totalPages,
-    paginatedData: paginatedReports,
-  } = usePagination<FullReport>({
-    data: reports,
-    pageSize: PAGE_SIZE,
-  });
+  const getClientName = useCallback(
+    (clientId: string) => {
+      if (!clientId) return "—";
+      return clientNameById.get(clientId) ?? "—";
+    },
+    [clientNameById],
+  );
 
   const handleSelectType = (type: ReportType) => {
     setIsMenuOpen(false);
@@ -116,18 +151,40 @@ export function Reports() {
   };
 
   const handleSearch = () => {
-    // TODO: Implementar lógica de búsqueda
-    console.log("Buscar con filtros:", searchFilters);
+    setAppliedFilters({ ...searchFilters });
   };
 
   const handleClearSearch = () => {
-    setSearchFilters({
-      client: "",
-      fechaDesde: "",
-      fechaHasta: "",
-      tipo: "",
-    });
-    // TODO: Recargar lista sin filtros
+    setSearchFilters(emptyFilters);
+    setAppliedFilters(null);
+  };
+
+  const filteredReports = useMemo(() => {
+    if (!reportsQuery.data) return [];
+    if (!appliedFilters) return reportsQuery.data;
+    return filterReports(reportsQuery.data, appliedFilters, getClientName);
+  }, [reportsQuery.data, appliedFilters, getClientName]);
+
+  const queryClient = useQueryClient();
+
+  const deleteMutation = useMutation({
+    mutationFn: deleteReport,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["reports", "agua"] });
+    },
+    onError: (error) => {
+      console.error("Error al eliminar informe:", error);
+      alert("No se pudo eliminar el informe. Intentá de nuevo.");
+    },
+  });
+
+  const handleDeleteReport = (id: string) => {
+    const confirmed = window.confirm(
+      "¿Estás seguro de que querés eliminar este informe? Esta acción no se puede deshacer.",
+    );
+    if (!confirmed) return;
+
+    deleteMutation.mutate(id);
   };
 
   return (
@@ -246,7 +303,7 @@ export function Reports() {
           </div>
 
           <div className="md:col-span-1 flex items-end gap-2">
-            <Button onClick={handleSearch} className="flex-1">
+            <Button onClick={handleSearch} className="flex-1" variant="outline">
               Buscar
             </Button>
             <Button
@@ -313,7 +370,7 @@ export function Reports() {
               {reportsQuery.isLoading ? (
                 <tr>
                   <td
-                    colSpan={6}
+                    colSpan={7}
                     className="px-6 py-12 text-center text-gray-500 dark:text-gray-400"
                   >
                     Cargando informes...
@@ -322,26 +379,39 @@ export function Reports() {
               ) : reportsQuery.isError ? (
                 <tr>
                   <td
-                    colSpan={6}
+                    colSpan={7}
                     className="px-6 py-12 text-center text-red-600 dark:text-red-400"
                   >
                     Error al cargar informes
                   </td>
                 </tr>
-              ) : !reportsQuery.data || reportsQuery.data.length === 0 ? (
+              ) : filteredReports.length === 0 ? (
                 <tr>
                   <td
-                    colSpan={6}
+                    colSpan={7}
                     className="px-6 py-12 text-center text-gray-500 dark:text-gray-400"
                   >
-                    <p className="text-sm">No hay informes generados aún</p>
-                    <p className="text-xs mt-1">
-                      Haz clic en "Nuevo Informe" para crear uno
-                    </p>
+                    {appliedFilters ? (
+                      <>
+                        <p className="text-sm">
+                          No se encontraron informes con esos filtros
+                        </p>
+                        <p className="text-xs mt-1">
+                          Probá ajustar los criterios o hacé clic en "Limpiar"
+                        </p>
+                      </>
+                    ) : (
+                      <>
+                        <p className="text-sm">No hay informes generados aún</p>
+                        <p className="text-xs mt-1">
+                          Haz clic en "Nuevo Informe" para crear uno
+                        </p>
+                      </>
+                    )}
                   </td>
                 </tr>
               ) : (
-                paginatedReports.map((item) => (
+                filteredReports.map((item) => (
                   <tr key={item.report.id}>
                     {/* Cliente */}
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
@@ -357,7 +427,7 @@ export function Reports() {
                     </td>
 
                     {/* Detalle */}
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100 w-11">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
                       {item.water.detalle || "—"}
                     </td>
 
@@ -377,7 +447,7 @@ export function Reports() {
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
                       {(() => {
                         const { text, classname } = getEstiloPorResultado(
-                          item.water.resultado ?? ""
+                          item.water.resultado ?? "",
                         );
                         return <span className={classname}>{text}</span>;
                       })()}
@@ -399,9 +469,17 @@ export function Reports() {
                       </button>
                       <button
                         type="button"
-                        className="text-red-600 hover:text-red-800 dark:text-red-300 dark:hover:text-red-100 text-xs"
+                        className="text-red-600 hover:text-red-800 dark:text-red-300 dark:hover:text-red-100 text-xs disabled:opacity-50 disabled:cursor-not-allowed"
+                        onClick={() => handleDeleteReport(item.report.id)}
+                        disabled={
+                          deleteMutation.isPending &&
+                          deleteMutation.variables === item.report.id
+                        }
                       >
-                        Eliminar
+                        {deleteMutation.isPending &&
+                        deleteMutation.variables === item.report.id
+                          ? "Eliminando..."
+                          : "Eliminar"}
                       </button>
                     </td>
                   </tr>
@@ -411,11 +489,6 @@ export function Reports() {
           </table>
         </div>
       </div>
-      <TablePagination
-        currentPage={currentPage}
-        totalPages={totalPages}
-        onPageChange={setCurrentPage}
-      />
     </div>
   );
 }

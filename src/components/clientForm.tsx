@@ -26,14 +26,16 @@ export function ClientForm({ onSubmit }: Props) {
 
   return (
     <form onSubmit={handleSubmit(submit)} className="flex gap-4 items-start">
-      <div className="flex flex-col">
+      <div className="flex flex-col w-4/5">
         <Input placeholder="Nombre del cliente" {...register("name")} />
         {errors.name && (
           <p className="text-sm text-red-500">{errors.name.message}</p>
         )}
       </div>
 
-      <Button type="submit">Agregar</Button>
+      <Button type="submit" variant="outline">
+        Agregar
+      </Button>
     </form>
   );
 }

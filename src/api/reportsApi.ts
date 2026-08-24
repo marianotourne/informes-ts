@@ -109,3 +109,16 @@ export async function fetchWaterReports(): Promise<FullReport[]> {
 
   return fullReports;
 }
+
+
+export async function deleteReport(id: string): Promise<void> {
+  const { error } = await supabase
+    .from("reports")
+    .delete()
+    .eq("id", id);
+
+  if (error) {
+    console.error(error);
+    throw new Error("Error al eliminar el informe: " + error.message);
+  }
+}
