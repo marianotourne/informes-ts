@@ -28,7 +28,6 @@ export interface Report {
     numero_propio?: number;
   
     // Remitente
-    remitente_id?: string;        // FK a clients
     remitente_direccion?: string;
     fecha_recepcion?: string;     // date ISO
     fecha_inicio?: string;        // date ISO

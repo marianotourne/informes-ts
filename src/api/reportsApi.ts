@@ -122,3 +122,81 @@ export async function deleteReport(id: string): Promise<void> {
     throw new Error("Error al eliminar el informe: " + error.message);
   }
 }
+
+
+export async function fetchWaterReportById(id: string): Promise<FullReport> {
+  const { data: report, error: reportError } = await supabase
+    .from("reports")
+    .select("*")
+    .eq("id", id)
+    .single();
+
+  if (reportError) {
+    console.error(reportError);
+    throw new Error("Error cargando el informe: " + reportError.message);
+  }
+
+  const { data: water, error: waterError } = await supabase
+    .from("report_water")
+    .select("*")
+    .eq("report_id", id)
+    .single();
+
+  if (waterError) {
+    console.error(waterError);
+    throw new Error("Error cargando report_water: " + waterError.message);
+  }
+
+  return {
+    type: "agua",
+    report: report as Report,
+    water: water as ReportWater,
+  };
+}
+
+export async function updateAguaReport(
+  id: string,
+  form: AguaReportFormData,
+): Promise<void> {
+  // 1. Actualizar reports (solo cambia client_id, el tipo no debería cambiar)
+  const { error: reportError } = await supabase
+    .from("reports")
+    .update({
+      client_id: form.remitente.id,
+    })
+    .eq("id", id);
+
+  if (reportError) {
+    console.error(reportError);
+    throw new Error("Error actualizando reports: " + reportError.message);
+  }
+
+  // 2. Actualizar report_water
+  const { error: waterError } = await supabase
+    .from("report_water")
+    .update({
+      numero_laboratorio: form.numero.laboratorio,
+      numero_propio: form.numero.propio,
+
+      remitente_direccion: form.remitente.direccion,
+      fecha_recepcion: form.remitente.fechaRecepcion,
+      fecha_inicio: form.remitente.fechaInicio,
+      detalle: form.remitente.detalle,
+
+      aerobias: form.resultados.aerobias,
+      bacterias: form.resultados.bacterias,
+      coliformes: form.resultados.coliformes,
+      escherichia: form.resultados.escherichia,
+      pseudomona: form.resultados.pseudomona,
+
+      fecha_informe: form.conclusiones.fechaInforme,
+      persona: form.conclusiones.persona,
+      resultado: form.conclusiones.resultado,
+    })
+    .eq("report_id", id);
+
+  if (waterError) {
+    console.error(waterError);
+    throw new Error("Error actualizando report_water: " + waterError.message);
+  }
+}

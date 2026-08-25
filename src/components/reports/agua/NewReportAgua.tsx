@@ -12,7 +12,6 @@ import { ResultadosAgua } from "./ResultadosAgua";
 import { Conclusiones } from "./Conclusiones";
 import { createAguaReport } from "@/api/reportsApi";
 import { toast } from "@/components/ui//useToast";
-import { Toaster } from "@/components/ui//Toaster";
 
 const initialValues: AguaReportFormData = {
   numero: {
@@ -77,7 +76,6 @@ export function NewReportAgua() {
 
   return (
     <Layout activeSection={activeSection} onSectionChange={setActiveSection}>
-      <Toaster />
       <div className="space-y-6">
         <div className="flex items-center gap-4">
           <Button

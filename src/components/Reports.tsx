@@ -187,6 +187,10 @@ export function Reports() {
     deleteMutation.mutate(id);
   };
 
+  const handleEditReport = (id: string) => {
+    navigate(`/reports/agua/${id}/edit`);
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -464,6 +468,7 @@ export function Reports() {
                       <button
                         type="button"
                         className="text-gray-600 hover:text-gray-800 dark:text-gray-300 dark:hover:text-gray-100 text-xs"
+                        onClick={() => handleEditReport(item.report.id)}
                       >
                         Editar
                       </button>
