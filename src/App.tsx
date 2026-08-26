@@ -5,6 +5,7 @@ import { ProtectedRoute } from "./components/ProtectedRoute";
 import { NewReportAgua } from "./components/reports/agua/NewReportAgua";
 import { EditReportAgua } from "./components/reports/agua/EditReportAgua";
 import { Toaster } from "@/components/ui/Toaster";
+import { ViewReportAgua } from "./components/reports/agua/ViewReportAgua";
 
 function App() {
   return (
@@ -36,7 +37,14 @@ function App() {
             </ProtectedRoute>
           }
         />
-
+        <Route
+          path="/reports/agua/:id/view"
+          element={
+            <ProtectedRoute>
+              <ViewReportAgua />
+            </ProtectedRoute>
+          }
+        />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>

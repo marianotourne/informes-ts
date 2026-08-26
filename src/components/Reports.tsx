@@ -191,6 +191,10 @@ export function Reports() {
     navigate(`/reports/agua/${id}/edit`);
   };
 
+  const handleViewReport = (id: string) => {
+    navigate(`/reports/agua/${id}/view`);
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -462,6 +466,7 @@ export function Reports() {
                       <button
                         type="button"
                         className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 text-xs mr-3"
+                        onClick={() => handleViewReport(item.report.id)}
                       >
                         Ver
                       </button>

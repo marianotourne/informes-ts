@@ -33,7 +33,6 @@ export const aguaReportSchema = z.object({
     coliformes: z.string().optional(),
     escherichia: z.string().optional(),
     pseudomona: z.string().optional(),
-    text11: z.string().optional(),
   }),
   conclusiones: z.object({
     resultado: z.string().optional(),

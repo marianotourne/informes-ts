@@ -1,11 +1,48 @@
+import { useState } from "react";
 import { useFormContext } from "react-hook-form";
 import { Input } from "@/components/ui/input";
 import type { AguaReportFormData } from "@/lib/zodSchemas";
 
 export function Aerobias() {
-  const { register, watch } = useFormContext<AguaReportFormData>();
-  const aerobias = watch("resultados.aerobias");
-  const displayInput = aerobias === "custom";
+  const { watch, setValue } = useFormContext<AguaReportFormData>();
+  const aerobiasValue = watch("resultados.aerobias");
+
+  const [customSelected, setCustomSelected] = useState(
+    () =>
+      !!aerobiasValue && aerobiasValue !== ">500" && aerobiasValue !== "<10",
+  );
+
+  // Rastrea el último valor "externo" visto, para detectar cambios
+  // que vienen de afuera (ej. al cargar datos en edición) sin usar useEffect.
+  const [lastSeenValue, setLastSeenValue] = useState(aerobiasValue);
+
+  if (aerobiasValue !== lastSeenValue) {
+    setLastSeenValue(aerobiasValue);
+
+    if (aerobiasValue === ">500" || aerobiasValue === "<10") {
+      setCustomSelected(false);
+    } else if (aerobiasValue) {
+      setCustomSelected(true);
+    }
+    // Si aerobiasValue es "", no tocamos customSelected: así no se
+    // "destilda" solo mientras el usuario está tipeando o borrando.
+  }
+
+  const handleSelectCustom = () => {
+    setCustomSelected(true);
+    if (aerobiasValue === ">500" || aerobiasValue === "<10") {
+      setValue("resultados.aerobias", "", { shouldValidate: true });
+    }
+  };
+
+  const handleSelectFixed = (value: ">500" | "<10") => {
+    setCustomSelected(false);
+    setValue("resultados.aerobias", value, { shouldValidate: true });
+  };
+
+  const handleCustomInput = (value: string) => {
+    setValue("resultados.aerobias", value, { shouldValidate: true });
+  };
 
   return (
     <div className="flex flex-col mb-3 border-b border-solid border-gray-400 pb-2">
@@ -18,14 +55,16 @@ export function Aerobias() {
         <label className="flex items-center gap-2">
           <input
             type="radio"
-            {...register("resultados.aerobias")}
-            value="custom"
+            name="aerobias-mode"
+            checked={customSelected}
+            onChange={handleSelectCustom}
             className="w-4 h-4"
           />
-          {displayInput && (
+          {customSelected && (
             <Input
               type="number"
-              {...register("resultados.text11")}
+              value={aerobiasValue ?? ""}
+              onChange={(e) => handleCustomInput(e.target.value)}
               className="w-20 sm:w-24 mr-2"
             />
           )}
@@ -37,8 +76,9 @@ export function Aerobias() {
         <label className="flex items-center gap-2">
           <input
             type="radio"
-            {...register("resultados.aerobias")}
-            value=">500"
+            name="aerobias-mode"
+            checked={!customSelected && aerobiasValue === ">500"}
+            onChange={() => handleSelectFixed(">500")}
             className="w-4 h-4"
           />
           <span className="text-sm text-gray-700 dark:text-gray-300">
@@ -49,8 +89,9 @@ export function Aerobias() {
         <label className="flex items-center gap-2">
           <input
             type="radio"
-            {...register("resultados.aerobias")}
-            value="<10"
+            name="aerobias-mode"
+            checked={!customSelected && aerobiasValue === "<10"}
+            onChange={() => handleSelectFixed("<10")}
             className="w-4 h-4"
           />
           <span className="text-sm text-gray-700 dark:text-gray-300">
