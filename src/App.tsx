@@ -2,8 +2,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { Login } from "./components/Login";
 import { Dashboard } from "./components/Dashboard";
 import { ProtectedRoute } from "./components/ProtectedRoute";
-import { NewReportAgua } from "./components/reports/agua/NewReportAgua";
-import { EditReportAgua } from "./components/reports/agua/EditReportAgua";
+import { AguaReportForm } from "./components/reports/agua/AguaReportForm";
 import { Toaster } from "@/components/ui/Toaster";
 import { ViewReportAgua } from "./components/reports/agua/ViewReportAgua";
 
@@ -25,7 +24,7 @@ function App() {
           path="/reports/agua/new"
           element={
             <ProtectedRoute>
-              <NewReportAgua />
+              <AguaReportForm />
             </ProtectedRoute>
           }
         />
@@ -33,7 +32,7 @@ function App() {
           path="/reports/agua/:id/edit"
           element={
             <ProtectedRoute>
-              <EditReportAgua />
+              <AguaReportForm />
             </ProtectedRoute>
           }
         />

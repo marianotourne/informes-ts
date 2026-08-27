@@ -10,7 +10,11 @@ import { Numeros } from "./Numeros";
 import { Remitente } from "./Remitente";
 import { ResultadosAgua } from "./ResultadosAgua";
 import { Conclusiones } from "./Conclusiones";
-import { fetchWaterReportById, updateAguaReport } from "@/api/reportsApi";
+import {
+  createAguaReport,
+  fetchWaterReportById,
+  updateAguaReport,
+} from "@/api/reportsApi";
 import { toast } from "@/components/ui//useToast";
 import type { FullReport } from "@/types/types";
 
@@ -66,12 +70,14 @@ const mapReportToFormValues = (item: FullReport): AguaReportFormData => ({
   },
 });
 
-export function EditReportAgua() {
+export function AguaReportForm() {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
+  const isEditMode = !!id;
+
   const [activeSection, setActiveSection] = useState("reports");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(isEditMode);
   const [loadError, setLoadError] = useState<string | null>(null);
 
   const methods = useForm<AguaReportFormData>({
@@ -80,11 +86,7 @@ export function EditReportAgua() {
   });
 
   useEffect(() => {
-    if (!id) {
-      setLoadError("Id de informe no válido");
-      setIsLoading(false);
-      return;
-    }
+    if (!isEditMode || !id) return;
 
     let isMounted = true;
 
@@ -106,22 +108,29 @@ export function EditReportAgua() {
     return () => {
       isMounted = false;
     };
-  }, [id, methods]);
+  }, [id, isEditMode, methods]);
 
   const handleBack = () => {
     navigate("/");
   };
 
   const onSubmit = async (data: AguaReportFormData) => {
-    if (!id) return;
-
     setIsSubmitting(true);
     try {
-      await updateAguaReport(id, data);
-      toast({
-        title: "Informe actualizado",
-        description: "El informe de agua se ha actualizado correctamente.",
-      });
+      if (isEditMode && id) {
+        await updateAguaReport(id, data);
+        toast({
+          title: "Informe actualizado",
+          description: "El informe de agua se ha actualizado correctamente.",
+        });
+      } else {
+        await createAguaReport(data);
+        toast({
+          title: "Informe creado",
+          description: "El informe de agua se ha creado correctamente.",
+        });
+        methods.reset();
+      }
       navigate("/");
     } catch (error) {
       toast({
@@ -129,7 +138,9 @@ export function EditReportAgua() {
         description:
           error instanceof Error
             ? error.message
-            : "Error al actualizar el informe",
+            : isEditMode
+              ? "Error al actualizar el informe"
+              : "Error al crear el informe",
       });
     } finally {
       setIsSubmitting(false);
@@ -149,7 +160,7 @@ export function EditReportAgua() {
             Volver
           </Button>
           <h1 className="text-4xl font-bold text-blue-600">
-            Editar Informe - Agua
+            {isEditMode ? "Editar Informe - Agua" : "Nuevo Informe - Agua"}
           </h1>
         </div>
 
@@ -184,7 +195,11 @@ export function EditReportAgua() {
                   Cancelar
                 </Button>
                 <Button type="submit" disabled={isSubmitting}>
-                  {isSubmitting ? "Guardando..." : "Guardar cambios"}
+                  {isSubmitting
+                    ? "Guardando..."
+                    : isEditMode
+                      ? "Guardar cambios"
+                      : "Guardar"}
                 </Button>
               </div>
             </form>

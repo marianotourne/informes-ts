@@ -10,6 +10,10 @@ import { useClients } from "@/hooks/useClients";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { formatDate } from "@/hooks/useDate";
 
+import { Eye, Pencil, FileDown, Trash2, Loader2 } from "lucide-react";
+import { pdf } from "@react-pdf/renderer";
+import { PDFAgua } from "./reports/agua/PDFAgua";
+
 const reportTypes: Array<{ value: ReportType; label: string }> = [
   { value: "agua", label: "Agua" },
   { value: "alimentos", label: "Alimentos" },
@@ -121,6 +125,35 @@ export function Reports() {
     },
     [clientNameById],
   );
+
+  // Generar PDF
+  const [generatingPdfId, setGeneratingPdfId] = useState<string | null>(null);
+
+  const handleDownloadPdf = async (item: FullReport) => {
+    setGeneratingPdfId(item.report.id);
+    try {
+      const clientName = getClientName(item.report.client_id);
+      const blob = await pdf(
+        <PDFAgua
+          report={item.report}
+          water={item.water}
+          clientName={clientName}
+        />,
+      ).toBlob();
+
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `informe-agua-${item.water.numero_propio ?? item.report.id}.pdf`;
+      link.click();
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error("Error al generar el PDF:", error);
+      alert("No se pudo generar el PDF. Intentá de nuevo.");
+    } finally {
+      setGeneratingPdfId(null);
+    }
+  };
 
   const handleSelectType = (type: ReportType) => {
     setIsMenuOpen(false);
@@ -462,7 +495,7 @@ export function Reports() {
                     </td>
 
                     {/* Acciones */}
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm text-gray-900 dark:text-gray-100">
+                    {/*                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm text-gray-900 dark:text-gray-100">
                       <button
                         type="button"
                         className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 text-xs mr-3"
@@ -491,6 +524,60 @@ export function Reports() {
                           ? "Eliminando..."
                           : "Eliminar"}
                       </button>
+                    </td> */}
+                    {/* Acciones */}
+                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm">
+                      <div className="flex items-center justify-end gap-3">
+                        <button
+                          type="button"
+                          title="Ver"
+                          className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
+                          onClick={() => handleViewReport(item.report.id)}
+                        >
+                          <Eye className="w-4 h-4" />
+                        </button>
+
+                        <button
+                          type="button"
+                          title="Editar"
+                          className="text-gray-600 hover:text-gray-800 dark:text-gray-300 dark:hover:text-gray-100"
+                          onClick={() => handleEditReport(item.report.id)}
+                        >
+                          <Pencil className="w-4 h-4" />
+                        </button>
+
+                        <button
+                          type="button"
+                          title="Descargar PDF"
+                          className="text-green-600 hover:text-green-800 dark:text-green-400 dark:hover:text-green-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                          onClick={() => handleDownloadPdf(item)}
+                          disabled={generatingPdfId === item.report.id}
+                        >
+                          {generatingPdfId === item.report.id ? (
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                          ) : (
+                            <FileDown className="w-4 h-4" />
+                          )}
+                        </button>
+
+                        <button
+                          type="button"
+                          title="Eliminar"
+                          className="text-red-600 hover:text-red-800 dark:text-red-300 dark:hover:text-red-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                          onClick={() => handleDeleteReport(item.report.id)}
+                          disabled={
+                            deleteMutation.isPending &&
+                            deleteMutation.variables === item.report.id
+                          }
+                        >
+                          {deleteMutation.isPending &&
+                          deleteMutation.variables === item.report.id ? (
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                          ) : (
+                            <Trash2 className="w-4 h-4" />
+                          )}
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))
