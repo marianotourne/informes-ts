@@ -8,11 +8,11 @@ import { fetchWaterReportById } from "@/api/reportsApi";
 import { useClients } from "@/hooks/useClients";
 import { PDFAgua } from "./PDFAgua";
 import type { FullReport } from "@/types/types";
+import { buildAguaReportFilename } from "@/lib/utils";
 
 export function ViewReportAgua() {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
-  const [activeSection, setActiveSection] = useState("reports");
   const [item, setItem] = useState<FullReport | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -55,7 +55,7 @@ export function ViewReportAgua() {
     "—";
 
   return (
-    <Layout activeSection={activeSection} onSectionChange={setActiveSection}>
+    <Layout>
       <div className="space-y-6">
         <div className="flex items-center justify-between gap-4">
           <div className="flex items-center gap-4">
@@ -79,7 +79,10 @@ export function ViewReportAgua() {
                   clientName={clientName}
                 />
               }
-              fileName={`informe-agua-${item.water.numero_propio ?? item.report.id}.pdf`}
+              fileName={buildAguaReportFilename(
+                item.water.numero_propio,
+                clientName,
+              )}
             >
               {({ loading }) => (
                 <Button disabled={loading}>

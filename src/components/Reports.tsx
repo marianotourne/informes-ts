@@ -13,6 +13,7 @@ import { formatDate } from "@/hooks/useDate";
 import { Eye, Pencil, FileDown, Trash2, Loader2 } from "lucide-react";
 import { pdf } from "@react-pdf/renderer";
 import { PDFAgua } from "./reports/agua/PDFAgua";
+import { buildAguaReportFilename } from "@/lib/utils";
 
 const reportTypes: Array<{ value: ReportType; label: string }> = [
   { value: "agua", label: "Agua" },
@@ -144,7 +145,10 @@ export function Reports() {
       const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = url;
-      link.download = `informe-agua-${item.water.numero_propio ?? item.report.id}.pdf`;
+      link.download = buildAguaReportFilename(
+        item.water.numero_propio,
+        clientName,
+      );
       link.click();
       URL.revokeObjectURL(url);
     } catch (error) {

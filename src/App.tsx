@@ -1,10 +1,12 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { Login } from "./components/Login";
-import { Dashboard } from "./components/Dashboard";
+import { Layout } from "./components/Layout";
+import { Reports } from "./components/Reports";
+import { Clients } from "./components/Clients";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import { AguaReportForm } from "./components/reports/agua/AguaReportForm";
-import { Toaster } from "@/components/ui/Toaster";
 import { ViewReportAgua } from "./components/reports/agua/ViewReportAgua";
+import { Toaster } from "@/components/ui/Toaster";
 
 function App() {
   return (
@@ -12,14 +14,29 @@ function App() {
       <Toaster />
       <Routes>
         <Route path="/login" element={<Login />} />
+
         <Route
           path="/"
           element={
             <ProtectedRoute>
-              <Dashboard />
+              <Layout>
+                <Reports />
+              </Layout>
             </ProtectedRoute>
           }
         />
+
+        <Route
+          path="/clients"
+          element={
+            <ProtectedRoute>
+              <Layout>
+                <Clients />
+              </Layout>
+            </ProtectedRoute>
+          }
+        />
+
         <Route
           path="/reports/agua/new"
           element={
@@ -44,6 +61,7 @@ function App() {
             </ProtectedRoute>
           }
         />
+
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>

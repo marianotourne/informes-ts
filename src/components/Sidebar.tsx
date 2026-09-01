@@ -7,33 +7,21 @@ import {
 } from "lucide-react";
 import { Button } from "./ui/button";
 import { cn } from "@/lib/utils";
+import { useNavigate, useLocation } from "react-router-dom";
 
 interface SidebarProps {
-  activeSection: string;
-  onSectionChange: (section: string) => void;
   onSignOut: () => void;
   isOpen: boolean;
   onToggle: () => void;
 }
 
-export function Sidebar({
-  activeSection,
-  onSectionChange,
-  onSignOut,
-  isOpen,
-  onToggle,
-}: SidebarProps) {
+export function Sidebar({ onSignOut, isOpen, onToggle }: SidebarProps) {
+  const navigate = useNavigate();
+  const location = useLocation();
+
   const menuItems = [
-    {
-      id: "reports",
-      label: "Informes",
-      icon: FileText,
-    },
-    {
-      id: "clients",
-      label: "Clientes",
-      icon: Users,
-    },
+    { path: "/", label: "Informes", icon: FileText },
+    { path: "/clients", label: "Clientes", icon: Users },
   ];
 
   return (
@@ -71,12 +59,12 @@ export function Sidebar({
       <nav className={cn("flex-1 p-4 space-y-2", !isOpen && "px-2")}>
         {menuItems.map((item) => {
           const Icon = item.icon;
-          const isActive = activeSection === item.id;
+          const isActive = location.pathname === item.path;
 
           return (
             <button
-              key={item.id}
-              onClick={() => onSectionChange(item.id)}
+              key={item.path}
+              onClick={() => navigate(item.path)}
               title={!isOpen ? item.label : undefined}
               className={cn(
                 "w-full flex items-center gap-3 py-3 rounded-lg transition-colors",

@@ -75,7 +75,6 @@ export function AguaReportForm() {
   const { id } = useParams<{ id: string }>();
   const isEditMode = !!id;
 
-  const [activeSection, setActiveSection] = useState("reports");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoading, setIsLoading] = useState(isEditMode);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -148,7 +147,7 @@ export function AguaReportForm() {
   };
 
   return (
-    <Layout activeSection={activeSection} onSectionChange={setActiveSection}>
+    <Layout>
       <div className="space-y-6">
         <div className="flex items-center gap-4">
           <Button

@@ -5,17 +5,11 @@ import { useNavigate } from "react-router-dom";
 
 interface LayoutProps {
   children: React.ReactNode;
-  activeSection: string;
-  onSectionChange: (section: string) => void;
 }
 
 const SIDEBAR_STORAGE_KEY = "sidebar-open";
 
-export function Layout({
-  children,
-  activeSection,
-  onSectionChange,
-}: LayoutProps) {
+export function Layout({ children }: LayoutProps) {
   const { signOut } = useAuth();
   const navigate = useNavigate();
 
@@ -40,8 +34,6 @@ export function Layout({
   return (
     <div className="flex h-screen bg-gray-50 dark:bg-gray-900">
       <Sidebar
-        activeSection={activeSection}
-        onSectionChange={onSectionChange}
         onSignOut={handleSignOut}
         isOpen={isSidebarOpen}
         onToggle={toggleSidebar}
