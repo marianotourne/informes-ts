@@ -7,6 +7,7 @@ import { ProtectedRoute } from "./components/ProtectedRoute";
 import { AguaReportForm } from "./components/reports/agua/AguaReportForm";
 import { ViewReportAgua } from "./components/reports/agua/ViewReportAgua";
 import { Toaster } from "@/components/ui/Toaster";
+import { AlimentosReportForm } from "./components/reports/alimentos/AlimentosReportForm";
 
 function App() {
   return (
@@ -61,6 +62,31 @@ function App() {
             </ProtectedRoute>
           }
         />
+
+        <Route
+          path="/reports/alimentos/new"
+          element={
+            <ProtectedRoute>
+              <AlimentosReportForm />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/reports/alimentos/:id/edit"
+          element={
+            <ProtectedRoute>
+              <AlimentosReportForm />
+            </ProtectedRoute>
+          }
+        />
+        {/* <Route
+          path="/reports/alimentos/:id/view"
+          element={
+            <ProtectedRoute>
+              <ViewReportAlimentos />
+            </ProtectedRoute>
+          }
+        /> */}
 
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

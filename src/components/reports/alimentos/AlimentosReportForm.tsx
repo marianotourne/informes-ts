@@ -5,20 +5,24 @@ import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useNavigate, useParams } from "react-router-dom";
 import { Layout } from "@/components/Layout";
-import { aguaReportSchema, type AguaReportFormData } from "@/lib/zodSchemas";
-import { Numeros } from "../common/Numeros";
-import { Remitente } from "../common/Remitente";
-import { ResultadosAgua } from "./ResultadosAgua";
-import { Conclusiones } from "./Conclusiones";
 import {
-  createAguaReport,
+  alimentosReportSchema,
+  type AlimentosReportFormData,
+} from "@/lib/zodSchemas";
+
+// import { ResultadosAlimentos } from "./ResultadosAlimentos";
+// import { Conclusiones } from "./Conclusiones";
+import {
+  createAlimentosReport,
   fetchWaterReportById,
-  updateAguaReport,
+  updateAlimentosReport,
 } from "@/api/reportsApi";
 import { toast } from "@/components/ui//useToast";
 import type { FullReport } from "@/types/types";
+import { Numeros } from "../common/Numeros";
+import { Remitente } from "../common/Remitente";
 
-const emptyValues: AguaReportFormData = {
+const emptyValues: AlimentosReportFormData = {
   numero: {
     laboratorio: 0,
     propio: 0,
@@ -44,7 +48,7 @@ const emptyValues: AguaReportFormData = {
   },
 };
 
-const mapReportToFormValues = (item: FullReport): AguaReportFormData => ({
+const mapReportToFormValues = (item: FullReport): AlimentosReportFormData => ({
   numero: {
     laboratorio: item.water.numero_laboratorio ?? 0,
     propio: item.water.numero_propio ?? 0,
@@ -70,7 +74,7 @@ const mapReportToFormValues = (item: FullReport): AguaReportFormData => ({
   },
 });
 
-export function AguaReportForm() {
+export function AlimentosReportForm() {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
   const isEditMode = !!id;
@@ -79,8 +83,8 @@ export function AguaReportForm() {
   const [isLoading, setIsLoading] = useState(isEditMode);
   const [loadError, setLoadError] = useState<string | null>(null);
 
-  const methods = useForm<AguaReportFormData>({
-    resolver: zodResolver(aguaReportSchema),
+  const methods = useForm<AlimentosReportFormData>({
+    resolver: zodResolver(alimentosReportSchema),
     defaultValues: emptyValues,
   });
 
@@ -113,20 +117,21 @@ export function AguaReportForm() {
     navigate("/");
   };
 
-  const onSubmit = async (data: AguaReportFormData) => {
+  const onSubmit = async (data: AlimentosReportFormData) => {
     setIsSubmitting(true);
     try {
       if (isEditMode && id) {
-        await updateAguaReport(id, data);
+        await updateAlimentosReport(id, data);
         toast({
           title: "Informe actualizado",
-          description: "El informe de agua se ha actualizado correctamente.",
+          description:
+            "El informe de alimentos se ha actualizado correctamente.",
         });
       } else {
-        await createAguaReport(data);
+        await createAlimentosReport(data);
         toast({
           title: "Informe creado",
-          description: "El informe de agua se ha creado correctamente.",
+          description: "El informe de alimentos se ha creado correctamente.",
         });
         methods.reset();
       }
@@ -159,7 +164,9 @@ export function AguaReportForm() {
             Volver
           </Button>
           <h1 className="text-4xl font-bold text-blue-600">
-            {isEditMode ? "Editar Informe - Agua" : "Nuevo Informe - Agua"}
+            {isEditMode
+              ? "Editar Informe - Alimentos"
+              : "Nuevo Informe - Alimentos"}
           </h1>
         </div>
 
@@ -180,7 +187,7 @@ export function AguaReportForm() {
               <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
                 <Numeros />
                 <Remitente />
-                <ResultadosAgua />
+                {/* <ResultadosAlimentos /> */}
                 <Conclusiones />
               </div>
 

@@ -20,7 +20,6 @@ export const aguaReportSchema = z.object({
     propio: z.number().int("Debe ser un número entero").min(1, "Debe ser un número positivo"),
   }),
   remitente: z.object({
-    // nombre: z.string().min(1, "El nombre es requerido"),
     id: z.string().uuid(),
     direccion: z.string().optional(),
     fechaRecepcion: z.string().min(1, "La fecha de recepción es requerida"),
@@ -41,4 +40,66 @@ export const aguaReportSchema = z.object({
   }),
 });
 
+export const alimentosReportSchema = z.object({
+  numero: z.object({
+    laboratorio: z.number().int("Debe ser un número entero").min(1, "Debe ser un número positivo"),
+    propio: z.number().int("Debe ser un número entero").min(1, "Debe ser un número positivo"),
+  }),
+  remitente: z.object({
+    id: z.string().uuid(),
+    direccion: z.string().optional(),
+    fechaRecepcion: z.string().min(1, "La fecha de recepción es requerida"),
+    fechaInicio: z.string().min(1, "La fecha de inicio es requerida"),
+    detalle: z.string().min(1, "El detalle es requerido"),
+    marcaComercial: z.string(),
+    matriz: z.string(),
+    }),
+  resultados: z.object({
+      aerobias: z.object({
+        base: z.number().positive(),
+        exponente: z.number().positive().int().min(1).max(10),
+        unidad: z.string(),
+      }),
+      coliformesTotales: z.object({
+        base: z.number().positive(),
+        exponente: z.number().positive().int().min(1).max(10),
+        unidad: z.string(),
+      }),
+      coliformesTermotolerantes: z.object({
+        base: z.number().positive(),
+        exponente: z.number().positive().int().min(1).max(10),
+        unidad: z.string(),
+      }),
+      estafilococo: z.object({
+        base: z.number().positive(),
+        exponente: z.number().positive().int().min(1).max(10),
+        unidad: z.string(),
+      }),
+      bacterias: z.object({
+        base: z.number().positive(),
+        exponente: z.number().positive().int().min(1).max(10),
+        unidad: z.string(),
+      }),
+      sulfito: z.object({
+        base: z.number().positive(),
+        exponente: z.number().positive().int().min(1).max(10),
+        unidad: z.string(),
+      }),
+      escherichia: z.object({
+        base: z.number().positive(),
+        exponente: z.number().positive().int().min(1).max(10),
+        unidad: z.string(),
+      }),
+      humedad: z.number().positive().min(0).max(100),
+      ph: z.number().positive().min(2).max(8),
+      gradosbrics: z.number().positive().min(0).max(100),
+      generic01: z.object({
+        name: z.string(),
+        number: z.string(),
+      }),
+    }),
+    observaciones: z.string(),
+});
+
 export type AguaReportFormData = z.infer<typeof aguaReportSchema>;
+export type AlimentosReportFormData = z.infer<typeof alimentosReportSchema>;

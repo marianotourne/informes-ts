@@ -1,7 +1,9 @@
 import { supabase } from "../utils/supabase";
-import type { AguaReportFormData } from "../lib/zodSchemas";
+import type { AguaReportFormData, AlimentosReportFormData } from "../lib/zodSchemas";
 import type { Report, ReportWater, FullReport } from "../types/types";
 
+
+//AGUA
 export async function createAguaReport(form: AguaReportFormData) {
   // 1. Insertar en reports
   const { data: report, error: reportError } = await supabase
@@ -60,6 +62,161 @@ export async function createAguaReport(form: AguaReportFormData) {
   return data;
 }
 
+export async function updateAguaReport(
+  id: string,
+  form: AguaReportFormData,
+): Promise<void> {
+  // 1. Actualizar reports (solo cambia client_id, el tipo no debería cambiar)
+  const { error: reportError } = await supabase
+    .from("reports")
+    .update({
+      client_id: form.remitente.id,
+    })
+    .eq("id", id);
+
+  if (reportError) {
+    console.error(reportError);
+    throw new Error("Error actualizando reports: " + reportError.message);
+  }
+
+  // 2. Actualizar report_water
+  const { error: waterError } = await supabase
+    .from("report_water")
+    .update({
+      numero_laboratorio: form.numero.laboratorio,
+      numero_propio: form.numero.propio,
+
+      remitente_direccion: form.remitente.direccion,
+      fecha_recepcion: form.remitente.fechaRecepcion,
+      fecha_inicio: form.remitente.fechaInicio,
+      detalle: form.remitente.detalle,
+
+      aerobias: form.resultados.aerobias,
+      bacterias: form.resultados.bacterias,
+      coliformes: form.resultados.coliformes,
+      escherichia: form.resultados.escherichia,
+      pseudomona: form.resultados.pseudomona,
+
+      fecha_informe: form.conclusiones.fechaInforme,
+      persona: form.conclusiones.persona,
+      resultado: form.conclusiones.resultado,
+    })
+    .eq("report_id", id);
+
+  if (waterError) {
+    console.error(waterError);
+    throw new Error("Error actualizando report_water: " + waterError.message);
+  }
+}
+
+//ALIMENTOS
+export async function createAlimentosReport(form: AlimentosReportFormData) {
+  // 1. Insertar en reports
+  const { data: report, error: reportError } = await supabase
+    .from("reports")
+    .insert({
+      // client_id: UUID de tabla clients
+      client_id: form.remitente.id,
+      // report_type_id: id de tabla report_types (2 = alimentos)
+      report_type_id: 2,
+    })
+    .select()
+    .single();
+
+  if (reportError) {
+    console.error(reportError);
+    throw new Error("Error insertando en reports: " + reportError.message);
+  }
+
+  // 2. Insertar en report_food
+  const { data, error } = await supabase
+    .from("report_food")
+    .insert({
+      // FK a reports
+      report_id: report.id,
+
+      // Sección numero
+      numero_laboratorio: form.numero.laboratorio,
+      numero_propio: form.numero.propio,
+
+      // Sección remitente
+      remitente_direccion: form.remitente.direccion,
+      fecha_recepcion: form.remitente.fechaRecepcion,
+      fecha_inicio: form.remitente.fechaInicio,
+      detalle: form.remitente.detalle,
+
+      // Sección resultados
+      aerobias: form.resultados.aerobias,
+      bacterias: form.resultados.bacterias,
+      coliformes: form.resultados.coliformes,
+      escherichia: form.resultados.escherichia,
+      pseudomona: form.resultados.pseudomona,
+
+      // Conclusiones
+      fecha_informe: form.conclusiones.fechaInforme,
+      persona: form.conclusiones.persona,
+      resultado: form.conclusiones.resultado,
+    })
+    .select()
+    .single();
+
+  if (error) {
+    console.error(error);
+    throw new Error("Error insertando en report_water: " + error.message);
+  }
+
+  return data;
+}
+
+export async function updateAlimentosReport(
+  id: string,
+  form: AguaReportFormData,
+): Promise<void> {
+  // 1. Actualizar reports (solo cambia client_id, el tipo no debería cambiar)
+  const { error: reportError } = await supabase
+    .from("reports")
+    .update({
+      client_id: form.remitente.id,
+    })
+    .eq("id", id);
+
+  if (reportError) {
+    console.error(reportError);
+    throw new Error("Error actualizando reports: " + reportError.message);
+  }
+
+  // 2. Actualizar report_water
+  const { error: waterError } = await supabase
+    .from("report_water")
+    .update({
+      numero_laboratorio: form.numero.laboratorio,
+      numero_propio: form.numero.propio,
+
+      remitente_direccion: form.remitente.direccion,
+      fecha_recepcion: form.remitente.fechaRecepcion,
+      fecha_inicio: form.remitente.fechaInicio,
+      detalle: form.remitente.detalle,
+
+      aerobias: form.resultados.aerobias,
+      bacterias: form.resultados.bacterias,
+      coliformes: form.resultados.coliformes,
+      escherichia: form.resultados.escherichia,
+      pseudomona: form.resultados.pseudomona,
+
+      fecha_informe: form.conclusiones.fechaInforme,
+      persona: form.conclusiones.persona,
+      resultado: form.conclusiones.resultado,
+    })
+    .eq("report_id", id);
+
+  if (waterError) {
+    console.error(waterError);
+    throw new Error("Error actualizando report_water: " + waterError.message);
+  }
+}
+
+
+
 // Devuelve sólo informes de agua junto con sus datos en report_water
 export async function fetchWaterReports(): Promise<FullReport[]> {
   // 1. Traer reports de tipo agua
@@ -110,20 +267,6 @@ export async function fetchWaterReports(): Promise<FullReport[]> {
   return fullReports;
 }
 
-
-export async function deleteReport(id: string): Promise<void> {
-  const { error } = await supabase
-    .from("reports")
-    .delete()
-    .eq("id", id);
-
-  if (error) {
-    console.error(error);
-    throw new Error("Error al eliminar el informe: " + error.message);
-  }
-}
-
-
 export async function fetchWaterReportById(id: string): Promise<FullReport> {
   const { data: report, error: reportError } = await supabase
     .from("reports")
@@ -154,49 +297,14 @@ export async function fetchWaterReportById(id: string): Promise<FullReport> {
   };
 }
 
-export async function updateAguaReport(
-  id: string,
-  form: AguaReportFormData,
-): Promise<void> {
-  // 1. Actualizar reports (solo cambia client_id, el tipo no debería cambiar)
-  const { error: reportError } = await supabase
+export async function deleteReport(id: string): Promise<void> {
+  const { error } = await supabase
     .from("reports")
-    .update({
-      client_id: form.remitente.id,
-    })
+    .delete()
     .eq("id", id);
 
-  if (reportError) {
-    console.error(reportError);
-    throw new Error("Error actualizando reports: " + reportError.message);
-  }
-
-  // 2. Actualizar report_water
-  const { error: waterError } = await supabase
-    .from("report_water")
-    .update({
-      numero_laboratorio: form.numero.laboratorio,
-      numero_propio: form.numero.propio,
-
-      remitente_direccion: form.remitente.direccion,
-      fecha_recepcion: form.remitente.fechaRecepcion,
-      fecha_inicio: form.remitente.fechaInicio,
-      detalle: form.remitente.detalle,
-
-      aerobias: form.resultados.aerobias,
-      bacterias: form.resultados.bacterias,
-      coliformes: form.resultados.coliformes,
-      escherichia: form.resultados.escherichia,
-      pseudomona: form.resultados.pseudomona,
-
-      fecha_informe: form.conclusiones.fechaInforme,
-      persona: form.conclusiones.persona,
-      resultado: form.conclusiones.resultado,
-    })
-    .eq("report_id", id);
-
-  if (waterError) {
-    console.error(waterError);
-    throw new Error("Error actualizando report_water: " + waterError.message);
+  if (error) {
+    console.error(error);
+    throw new Error("Error al eliminar el informe: " + error.message);
   }
 }
