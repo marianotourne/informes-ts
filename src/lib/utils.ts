@@ -7,13 +7,27 @@ export function cn(...inputs: ClassValue[]) {
 
 
 export function buildAguaReportFilename(
-  numeroPropio: number | undefined,
+  numeroPropio: number | null | undefined,
   clientName: string,
 ): string {
   const numero = numeroPropio ?? "SN"; // "SN" = Sin Número, por si no está cargado
   const nombre = clientName || "Sin cliente";
 
   const raw = `ANÁLISIS AGUA ${numero} - ${nombre}`;
+
+  // Sanitiza caracteres inválidos en nombres de archivo (Windows/Mac/Linux)
+  const safe = raw.replace(/[/\\:*?"<>|]/g, "");
+
+  return `${safe}.pdf`;
+}
+export function buildAlimentosReportFilename(
+  numeroPropio: number | null | undefined,
+  clientName: string,
+): string {
+  const numero = numeroPropio ?? "SN"; // "SN" = Sin Número, por si no está cargado
+  const nombre = clientName || "Sin cliente";
+
+  const raw = `ANÁLISIS ALIMENTOS ${numero} - ${nombre}`;
 
   // Sanitiza caracteres inválidos en nombres de archivo (Windows/Mac/Linux)
   const safe = raw.replace(/[/\\:*?"<>|]/g, "");

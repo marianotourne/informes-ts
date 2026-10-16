@@ -7,13 +7,13 @@ import { Layout } from "@/components/Layout";
 import { fetchWaterReportById } from "@/api/reportsApi";
 import { useClients } from "@/hooks/useClients";
 import { PDFAgua } from "./PDFAgua";
-import type { FullReport } from "@/types/types";
+import type { FullWaterReport } from "@/types/types";
 import { buildAguaReportFilename } from "@/lib/utils";
 
 export function ViewReportAgua() {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
-  const [item, setItem] = useState<FullReport | null>(null);
+  const [item, setItem] = useState<FullWaterReport | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
 

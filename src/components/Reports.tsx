@@ -5,7 +5,7 @@ import { Input } from "./ui/input";
 import { useNavigate } from "react-router-dom";
 // import { cn } from "@/lib/utils";
 import type { FullReport, ReportType } from "@/types/types";
-import { deleteReport, fetchWaterReports } from "@/api/reportsApi";
+import { deleteReport, fetchAllReports } from "@/api/reportsApi";
 import { useClients } from "@/hooks/useClients";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { formatDate } from "@/hooks/useDate";
@@ -13,7 +13,11 @@ import { formatDate } from "@/hooks/useDate";
 import { Eye, Pencil, FileDown, Trash2, Loader2 } from "lucide-react";
 import { pdf } from "@react-pdf/renderer";
 import { PDFAgua } from "./reports/agua/PDFAgua";
-import { buildAguaReportFilename } from "@/lib/utils";
+import { PDFAlimentos } from "./reports/alimentos/PDFAlimentos";
+import {
+  buildAguaReportFilename,
+  buildAlimentosReportFilename,
+} from "@/lib/utils";
 
 const reportTypes: Array<{ value: ReportType; label: string }> = [
   { value: "agua", label: "Agua" },
@@ -64,8 +68,15 @@ const emptyFilters: SearchFilters = {
   tipo: "",
 };
 
+const getReportTypeLabel = (type: ReportType) =>
+  reportTypes.find((t) => t.value === type)?.label ?? type;
+
+// Type-specific row (report_water / report_food); both share the numero, detalle and fecha_informe columns
+const getDetail = (item: FullReport) =>
+  item.type === "agua" ? item.water : item.food;
+
 const getReportDate = (item: FullReport): string => {
-  const raw = item.water.fecha_informe ?? item.report.created_at;
+  const raw = getDetail(item).fecha_informe ?? item.report.created_at;
   return raw.slice(0, 10);
 };
 
@@ -108,8 +119,8 @@ export function Reports() {
   const { clientsQuery } = useClients();
 
   const reportsQuery = useQuery<FullReport[]>({
-    queryKey: ["reports", "agua"],
-    queryFn: fetchWaterReports,
+    queryKey: ["reports"],
+    queryFn: fetchAllReports,
   });
 
   // Mapa de clientId -> nombre, se recalcula solo cuando cambian los clientes
@@ -135,20 +146,28 @@ export function Reports() {
     try {
       const clientName = getClientName(item.report.client_id);
       const blob = await pdf(
-        <PDFAgua
-          report={item.report}
-          water={item.water}
-          clientName={clientName}
-        />,
+        item.type === "agua" ? (
+          <PDFAgua
+            report={item.report}
+            water={item.water}
+            clientName={clientName}
+          />
+        ) : (
+          <PDFAlimentos
+            report={item.report}
+            food={item.food}
+            clientName={clientName}
+          />
+        ),
       ).toBlob();
 
       const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = url;
-      link.download = buildAguaReportFilename(
-        item.water.numero_propio,
-        clientName,
-      );
+      link.download =
+        item.type === "agua"
+          ? buildAguaReportFilename(item.water.numero_propio, clientName)
+          : buildAlimentosReportFilename(item.food.numero_propio, clientName);
       link.click();
       URL.revokeObjectURL(url);
     } catch (error) {
@@ -169,7 +188,8 @@ export function Reports() {
         break;
       case "alimentos":
         // TODO: Crear ruta para alimentos
-        console.log("Crear informe de alimentos");
+        // console.log("Crear informe de alimentos");
+        navigate("/reports/alimentos/new");
         break;
       case "nutricion":
         // TODO: Crear ruta para nutrición
@@ -207,7 +227,7 @@ export function Reports() {
   const deleteMutation = useMutation({
     mutationFn: deleteReport,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["reports", "agua"] });
+      queryClient.invalidateQueries({ queryKey: ["reports"] });
     },
     onError: (error) => {
       console.error("Error al eliminar informe:", error);
@@ -224,12 +244,12 @@ export function Reports() {
     deleteMutation.mutate(id);
   };
 
-  const handleEditReport = (id: string) => {
-    navigate(`/reports/agua/${id}/edit`);
+  const handleEditReport = (item: FullReport) => {
+    navigate(`/reports/${item.type}/${item.report.id}/edit`);
   };
 
-  const handleViewReport = (id: string) => {
-    navigate(`/reports/agua/${id}/view`);
+  const handleViewReport = (item: FullReport) => {
+    navigate(`/reports/${item.type}/${item.report.id}/view`);
   };
 
   return (
@@ -466,36 +486,36 @@ export function Reports() {
                     {/* Número */}
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
                       {item.report.report_number ||
-                        item.water.numero_propio ||
-                        item.water.numero_laboratorio ||
+                        getDetail(item).numero_propio ||
+                        getDetail(item).numero_laboratorio ||
                         "—"}
                     </td>
 
                     {/* Detalle */}
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
-                      {item.water.detalle || "—"}
+                      {getDetail(item).detalle || "—"}
                     </td>
 
                     {/* Tipo */}
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
-                      Agua
+                      {getReportTypeLabel(item.type)}
                     </td>
 
                     {/* Fecha */}
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
-                      {item.water.fecha_informe
-                        ? formatDate(item.water.fecha_informe)
-                        : formatDate(item.report.created_at)}
+                      {formatDate(getReportDate(item))}
                     </td>
 
                     {/* Resultado */}
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
-                      {(() => {
-                        const { text, classname } = getEstiloPorResultado(
-                          item.water.resultado ?? "",
-                        );
-                        return <span className={classname}>{text}</span>;
-                      })()}
+                      {item.type === "agua"
+                        ? (() => {
+                            const { text, classname } = getEstiloPorResultado(
+                              item.water.resultado ?? "",
+                            );
+                            return <span className={classname}>{text}</span>;
+                          })()
+                        : "—"}
                     </td>
 
                     {/* Acciones */}
@@ -536,7 +556,7 @@ export function Reports() {
                           type="button"
                           title="Ver"
                           className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
-                          onClick={() => handleViewReport(item.report.id)}
+                          onClick={() => handleViewReport(item)}
                         >
                           <Eye className="w-4 h-4" />
                         </button>
@@ -545,7 +565,7 @@ export function Reports() {
                           type="button"
                           title="Editar"
                           className="text-gray-600 hover:text-gray-800 dark:text-gray-300 dark:hover:text-gray-100"
-                          onClick={() => handleEditReport(item.report.id)}
+                          onClick={() => handleEditReport(item)}
                         >
                           <Pencil className="w-4 h-4" />
                         </button>

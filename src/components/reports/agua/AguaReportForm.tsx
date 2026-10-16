@@ -16,7 +16,7 @@ import {
   updateAguaReport,
 } from "@/api/reportsApi";
 import { toast } from "@/components/ui//useToast";
-import type { FullReport } from "@/types/types";
+import type { FullWaterReport } from "@/types/types";
 
 const emptyValues: AguaReportFormData = {
   numero: {
@@ -44,7 +44,7 @@ const emptyValues: AguaReportFormData = {
   },
 };
 
-const mapReportToFormValues = (item: FullReport): AguaReportFormData => ({
+const mapReportToFormValues = (item: FullWaterReport): AguaReportFormData => ({
   numero: {
     laboratorio: item.water.numero_laboratorio ?? 0,
     propio: item.water.numero_propio ?? 0,

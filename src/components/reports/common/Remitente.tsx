@@ -4,7 +4,12 @@ import { useClients } from "@/hooks/useClients";
 import type { AguaReportFormData } from "@/lib/zodSchemas";
 import { ClientSelect } from "@/components/ClientSelect";
 
-export function Remitente() {
+type RemitenteProps = {
+  // Extra fields specific to a report type, rendered at the end of the section
+  children?: React.ReactNode;
+};
+
+export function Remitente({ children }: RemitenteProps) {
   const {
     register,
     setValue,
@@ -93,6 +98,8 @@ export function Remitente() {
             className="w-full min-h-[100px] rounded-md border border-gray-300 dark:border-gray-600 bg-transparent px-3 py-2 text-sm shadow-xs transition"
           />
         </div>
+
+        {children}
       </div>
     </section>
   );

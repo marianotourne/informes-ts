@@ -73,7 +73,7 @@ const styles = StyleSheet.create({
   pieFirma: { marginLeft: "350px", fontSize: 9 },
 });
 
-const formatDate = (value?: string) => {
+const formatDate = (value?: string | null) => {
   if (!value) return "";
   const parsed = dayjs(value);
   if (!parsed.isValid()) {

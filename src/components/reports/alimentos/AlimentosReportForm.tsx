@@ -10,17 +10,26 @@ import {
   type AlimentosReportFormData,
 } from "@/lib/zodSchemas";
 
-// import { ResultadosAlimentos } from "./ResultadosAlimentos";
-// import { Conclusiones } from "./Conclusiones";
+import { ResultadosAlimentos } from "./ResultadosAlimentos";
+import { Conclusiones } from "./Conclusiones";
+import { MarcaMatriz } from "./MarcaMatriz";
 import {
   createAlimentosReport,
-  fetchWaterReportById,
+  fetchFoodReportById,
   updateAlimentosReport,
 } from "@/api/reportsApi";
 import { toast } from "@/components/ui//useToast";
-import type { FullReport } from "@/types/types";
+import type { FullFoodReport } from "@/types/types";
 import { Numeros } from "../common/Numeros";
 import { Remitente } from "../common/Remitente";
+
+const emptyRecuento = {
+  base: undefined,
+  exponente: undefined,
+  menor10: false,
+  unidad: "",
+};
+const emptyRecuentoMenor1 = { ...emptyRecuento, menor1: false };
 
 const emptyValues: AlimentosReportFormData = {
   numero: {
@@ -33,44 +42,118 @@ const emptyValues: AlimentosReportFormData = {
     fechaInicio: "",
     fechaRecepcion: "",
     detalle: "",
+    marcaComercial: "",
+    matriz: "",
   },
   resultados: {
-    aerobias: "",
-    bacterias: "",
-    coliformes: "",
-    escherichia: "",
-    pseudomona: "",
+    aerobias: emptyRecuento,
+    coliformesTotales: emptyRecuento,
+    coliformesTermotolerantes: emptyRecuento,
+    estafilococo: emptyRecuentoMenor1,
+    bacterias: emptyRecuento,
+    sulfito: emptyRecuento,
+    escherichia: emptyRecuento,
+    mohos: emptyRecuentoMenor1,
+    salmonella: { base: undefined, presencia: "", unidad: "" },
+    humedad: undefined,
+    ph: undefined,
+    gradosbrics: undefined,
+    generic01: { name: "", number: "" },
   },
   conclusiones: {
-    resultado: "",
-    persona: "",
     fechaInforme: "",
+    observaciones: "",
   },
 };
 
-const mapReportToFormValues = (item: FullReport): AlimentosReportFormData => ({
+// humedad, ph and grados_brics are still text columns in the database
+const toOptionalNumber = (value: number | string | null | undefined) =>
+  value === null || value === undefined || value === "" ? undefined : Number(value);
+
+const mapReportToFormValues = ({
+  report,
+  food,
+}: FullFoodReport): AlimentosReportFormData => ({
   numero: {
-    laboratorio: item.water.numero_laboratorio ?? 0,
-    propio: item.water.numero_propio ?? 0,
+    laboratorio: food.numero_laboratorio ?? 0,
+    propio: food.numero_propio ?? 0,
   },
   remitente: {
-    id: item.report.client_id ?? "",
-    direccion: item.water.remitente_direccion ?? "",
-    fechaInicio: item.water.fecha_inicio ?? "",
-    fechaRecepcion: item.water.fecha_recepcion ?? "",
-    detalle: item.water.detalle ?? "",
+    id: report.client_id ?? "",
+    direccion: food.remitente_direccion ?? "",
+    fechaInicio: food.fecha_inicio ?? "",
+    fechaRecepcion: food.fecha_recepcion ?? "",
+    detalle: food.detalle ?? "",
+    marcaComercial: food.marca_comercial ?? "",
+    matriz: food.matriz ?? "",
   },
   resultados: {
-    aerobias: item.water.aerobias ?? "",
-    bacterias: item.water.bacterias ?? "",
-    coliformes: item.water.coliformes ?? "",
-    escherichia: item.water.escherichia ?? "",
-    pseudomona: item.water.pseudomona ?? "",
+    aerobias: {
+      base: food.aerobias_base ?? undefined,
+      exponente: food.aerobias_exponente ?? undefined,
+      menor10: food.aerobias_menor10 ?? false,
+      unidad: food.aerobias_unidad ?? "",
+    },
+    coliformesTotales: {
+      base: food.coliformes_totales_base ?? undefined,
+      exponente: food.coliformes_totales_exponente ?? undefined,
+      menor10: food.coliformes_totales_menor10 ?? false,
+      unidad: food.coliformes_totales_unidad ?? "",
+    },
+    coliformesTermotolerantes: {
+      base: food.coliformes_termotolerantes_base ?? undefined,
+      exponente: food.coliformes_termotolerantes_exponente ?? undefined,
+      menor10: food.coliformes_termotolerantes_menor10 ?? false,
+      unidad: food.coliformes_termotolerantes_unidad ?? "",
+    },
+    estafilococo: {
+      base: food.estafilococo_base ?? undefined,
+      exponente: food.estafilococo_exponente ?? undefined,
+      menor1: food.estafilococo_menor1 ?? false,
+      menor10: food.estafilococo_menor10 ?? false,
+      unidad: food.estafilococo_unidad ?? "",
+    },
+    bacterias: {
+      base: food.bacterias_base ?? undefined,
+      exponente: food.bacterias_exponente ?? undefined,
+      menor10: food.bacterias_menor10 ?? false,
+      unidad: food.bacterias_unidad ?? "",
+    },
+    sulfito: {
+      base: food.sulfito_base ?? undefined,
+      exponente: food.sulfito_exponente ?? undefined,
+      menor10: food.sulfito_menor10 ?? false,
+      unidad: food.sulfito_unidad ?? "",
+    },
+    escherichia: {
+      base: food.escherichia_base ?? undefined,
+      exponente: food.escherichia_exponente ?? undefined,
+      menor10: food.escherichia_menor10 ?? false,
+      unidad: food.escherichia_unidad ?? "",
+    },
+    mohos: {
+      base: food.mohos_base ?? undefined,
+      exponente: food.mohos_exponente ?? undefined,
+      menor1: food.mohos_menor1 ?? false,
+      menor10: food.mohos_menor10 ?? false,
+      unidad: food.mohos_unidad ?? "",
+    },
+    salmonella: {
+      base: food.salmonella_base ?? undefined,
+      presencia: food.salmonella_presencia ?? "",
+      unidad: food.salmonella_unidad ?? "",
+    },
+    humedad: toOptionalNumber(food.humedad),
+    ph: toOptionalNumber(food.ph),
+    gradosbrics: toOptionalNumber(food.grados_brics),
+    generic01: {
+      name: food.generic01_name ?? "",
+      number: food.generic01_number?.toString() ?? "",
+    },
   },
   conclusiones: {
-    resultado: item.water.resultado ?? "",
-    persona: item.water.persona ?? "",
-    fechaInforme: item.water.fecha_informe ?? "",
+    fechaInforme: food.fecha_informe ?? "",
+    observaciones: food.observaciones ?? "",
   },
 });
 
@@ -95,7 +178,7 @@ export function AlimentosReportForm() {
 
     (async () => {
       try {
-        const item = await fetchWaterReportById(id);
+        const item = await fetchFoodReportById(id);
         if (!isMounted) return;
         methods.reset(mapReportToFormValues(item));
       } catch (error) {
@@ -186,8 +269,10 @@ export function AlimentosReportForm() {
             >
               <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
                 <Numeros />
-                <Remitente />
-                {/* <ResultadosAlimentos /> */}
+                <Remitente>
+                  <MarcaMatriz />
+                </Remitente>
+                <ResultadosAlimentos />
                 <Conclusiones />
               </div>
 

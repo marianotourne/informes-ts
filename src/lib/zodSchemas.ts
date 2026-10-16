@@ -40,6 +40,47 @@ export const aguaReportSchema = z.object({
   }),
 });
 
+// Microbial count: either base x 10^exponente, or "< 10" / "< 1x10²" (never both).
+// A count left completely empty means the analysis was not performed.
+const recuentoFields = {
+  base: z.number().positive("Debe ser positivo").optional(),
+  exponente: z.number().int("Debe ser entero").min(1, "Mínimo 1").max(10, "Máximo 10").optional(),
+  menor10: z.boolean(),
+  unidad: z.string(), // "g" | "ml"
+};
+
+type Recuento = {
+  base?: number;
+  exponente?: number;
+  menor10: boolean;
+  menor1?: boolean;
+  unidad: string;
+};
+
+const validarRecuento = (r: Recuento, ctx: z.RefinementCtx) => {
+  const esMenor = r.menor10 || !!r.menor1;
+  const tieneValor = r.base !== undefined || r.exponente !== undefined;
+
+  if (r.menor10 && r.menor1) {
+    ctx.addIssue({ code: "custom", path: ["menor10"], message: "Elegí solo una opción: < 10 o < 1x10²" });
+  }
+  if (esMenor && tieneValor) {
+    ctx.addIssue({ code: "custom", path: ["base"], message: "Con < 10 o < 1x10² no se cargan base ni exponente" });
+  } else if (tieneValor && (r.base === undefined || r.exponente === undefined)) {
+    ctx.addIssue({ code: "custom", path: ["base"], message: "Cargá base y exponente" });
+  }
+  if ((esMenor || tieneValor) && !r.unidad) {
+    ctx.addIssue({ code: "custom", path: ["unidad"], message: "Elegí la unidad" });
+  }
+};
+
+const recuentoSchema = z.object(recuentoFields).superRefine(validarRecuento);
+
+// Same as recuentoSchema, plus the "< 1x10²" option
+const recuentoMenor1Schema = z
+  .object({ ...recuentoFields, menor1: z.boolean() })
+  .superRefine(validarRecuento);
+
 export const alimentosReportSchema = z.object({
   numero: z.object({
     laboratorio: z.number().int("Debe ser un número entero").min(1, "Debe ser un número positivo"),
@@ -53,52 +94,39 @@ export const alimentosReportSchema = z.object({
     detalle: z.string().min(1, "El detalle es requerido"),
     marcaComercial: z.string(),
     matriz: z.string(),
-    }),
+  }),
   resultados: z.object({
-      aerobias: z.object({
-        base: z.number().positive(),
-        exponente: z.number().positive().int().min(1).max(10),
-        unidad: z.string(),
+    aerobias: recuentoSchema,
+    coliformesTotales: recuentoSchema,
+    coliformesTermotolerantes: recuentoSchema,
+    estafilococo: recuentoMenor1Schema,
+    bacterias: recuentoSchema,
+    sulfito: recuentoSchema,
+    escherichia: recuentoSchema,
+    mohos: recuentoMenor1Schema,
+    salmonella: z
+      .object({
+        base: z.number().positive().optional(), // 25 | 50
+        presencia: z.string(), // "Presencia" | "Ausencia"
+        unidad: z.string(), // "g" | "ml"
+      })
+      .superRefine((s, ctx) => {
+        if (s.presencia && (s.base === undefined || !s.unidad)) {
+          ctx.addIssue({ code: "custom", path: ["base"], message: "Elegí la cantidad y la unidad" });
+        }
       }),
-      coliformesTotales: z.object({
-        base: z.number().positive(),
-        exponente: z.number().positive().int().min(1).max(10),
-        unidad: z.string(),
-      }),
-      coliformesTermotolerantes: z.object({
-        base: z.number().positive(),
-        exponente: z.number().positive().int().min(1).max(10),
-        unidad: z.string(),
-      }),
-      estafilococo: z.object({
-        base: z.number().positive(),
-        exponente: z.number().positive().int().min(1).max(10),
-        unidad: z.string(),
-      }),
-      bacterias: z.object({
-        base: z.number().positive(),
-        exponente: z.number().positive().int().min(1).max(10),
-        unidad: z.string(),
-      }),
-      sulfito: z.object({
-        base: z.number().positive(),
-        exponente: z.number().positive().int().min(1).max(10),
-        unidad: z.string(),
-      }),
-      escherichia: z.object({
-        base: z.number().positive(),
-        exponente: z.number().positive().int().min(1).max(10),
-        unidad: z.string(),
-      }),
-      humedad: z.number().positive().min(0).max(100),
-      ph: z.number().positive().min(2).max(8),
-      gradosbrics: z.number().positive().min(0).max(100),
-      generic01: z.object({
-        name: z.string(),
-        number: z.string(),
-      }),
+    humedad: z.number().min(0, "Mínimo 0").max(100, "Máximo 100").optional(),
+    ph: z.number().min(2, "Mínimo 2").max(8, "Máximo 8").optional(),
+    gradosbrics: z.number().min(0, "Mínimo 0").max(100, "Máximo 100").optional(),
+    generic01: z.object({
+      name: z.string(),
+      number: z.string(),
     }),
+  }),
+  conclusiones: z.object({
+    fechaInforme: z.string().min(1, "La fecha de informe es requerida"),
     observaciones: z.string(),
+  }),
 });
 
 export type AguaReportFormData = z.infer<typeof aguaReportSchema>;
