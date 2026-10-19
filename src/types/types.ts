@@ -1,7 +1,9 @@
 export interface Client {
   id: string; // UUID
-  name: string;
-  companyname?: string;
+  name: string; // Razón social
+  phone?: string | null;
+  email?: string | null;
+  address?: string | null;
 }
 
 

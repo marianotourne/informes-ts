@@ -48,6 +48,12 @@ export async function deleteClient(id: string) {
 
   if (error) {
     console.error("Error eliminando cliente:", error);
+    // 23503 = foreign_key_violation: el cliente está referenciado por informes
+    if (error.code === "23503") {
+      throw new Error(
+        "No se puede eliminar el cliente porque tiene informes asociados.",
+      );
+    }
     throw new Error(error.message);
   }
 

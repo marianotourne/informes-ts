@@ -2,7 +2,15 @@
 import { z } from "zod";
 
 export const clientSchema = z.object({
-  name: z.string().min(2, "El nombre debe tener al menos 2 caracteres"),
+  name: z.string().trim().min(1, "La razón social es obligatoria"),
+  phone: z.string().trim(),
+  email: z
+    .string()
+    .trim()
+    .refine((v) => v === "" || z.email().safeParse(v).success, {
+      message: "El correo electrónico no es válido",
+    }),
+  address: z.string().trim(),
 });
 
 export type ClientFormData = z.infer<typeof clientSchema>;

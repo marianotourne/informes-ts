@@ -12,6 +12,8 @@ import { formatDate } from "@/hooks/useDate";
 
 import { Eye, Pencil, FileDown, Trash2, Loader2 } from "lucide-react";
 import { pdf } from "@react-pdf/renderer";
+import { ConfirmDialog } from "./ConfirmDialog";
+import { toast } from "./ui/useToast";
 import { PDFAgua } from "./reports/agua/PDFAgua";
 import { PDFAlimentos } from "./reports/alimentos/PDFAlimentos";
 import {
@@ -172,7 +174,10 @@ export function Reports() {
       URL.revokeObjectURL(url);
     } catch (error) {
       console.error("Error al generar el PDF:", error);
-      alert("No se pudo generar el PDF. Intentá de nuevo.");
+      toast({
+        title: "Error al generar el PDF",
+        description: "No se pudo generar el PDF. Intentá de nuevo.",
+      });
     } finally {
       setGeneratingPdfId(null);
     }
@@ -227,21 +232,24 @@ export function Reports() {
   const deleteMutation = useMutation({
     mutationFn: deleteReport,
     onSuccess: () => {
+      toast({ title: "Informe eliminado" });
       queryClient.invalidateQueries({ queryKey: ["reports"] });
     },
     onError: (error) => {
       console.error("Error al eliminar informe:", error);
-      alert("No se pudo eliminar el informe. Intentá de nuevo.");
+      toast({
+        title: "Error al eliminar el informe",
+        description: "No se pudo eliminar el informe. Intentá de nuevo.",
+      });
     },
   });
 
-  const handleDeleteReport = (id: string) => {
-    const confirmed = window.confirm(
-      "¿Estás seguro de que querés eliminar este informe? Esta acción no se puede deshacer.",
-    );
-    if (!confirmed) return;
+  const [reportToDelete, setReportToDelete] = useState<FullReport | null>(null);
+  // Separado del ítem para que el texto no se vacíe durante la animación de cierre
+  const [confirmOpen, setConfirmOpen] = useState(false);
 
-    deleteMutation.mutate(id);
+  const handleConfirmDelete = () => {
+    if (reportToDelete) deleteMutation.mutate(reportToDelete.report.id);
   };
 
   const handleEditReport = (item: FullReport) => {
@@ -588,7 +596,10 @@ export function Reports() {
                           type="button"
                           title="Eliminar"
                           className="text-red-600 hover:text-red-800 dark:text-red-300 dark:hover:text-red-100 disabled:opacity-50 disabled:cursor-not-allowed"
-                          onClick={() => handleDeleteReport(item.report.id)}
+                          onClick={() => {
+                            setReportToDelete(item);
+                            setConfirmOpen(true);
+                          }}
                           disabled={
                             deleteMutation.isPending &&
                             deleteMutation.variables === item.report.id
@@ -610,6 +621,33 @@ export function Reports() {
           </table>
         </div>
       </div>
+
+      <ConfirmDialog
+        open={confirmOpen}
+        onOpenChange={setConfirmOpen}
+        title="Eliminar informe"
+        description={
+          <>
+            ¿Estás seguro de que querés eliminar el informe
+            {reportToDelete && (
+              <>
+                {" "}
+                <strong>
+                  {reportToDelete.report.report_number ||
+                    getDetail(reportToDelete).numero_propio ||
+                    getDetail(reportToDelete).numero_laboratorio}
+                </strong>{" "}
+                de{" "}
+                <strong>
+                  {getClientName(reportToDelete.report.client_id)}
+                </strong>
+              </>
+            )}
+            ? Esta acción no se puede deshacer.
+          </>
+        }
+        onConfirm={handleConfirmDelete}
+      />
     </div>
   );
 }
