@@ -13,6 +13,7 @@ import { Conclusiones } from "./Conclusiones";
 import {
   createAguaReport,
   fetchWaterReportById,
+  fetchNextNumeroPropio,
   updateAguaReport,
 } from "@/api/reportsApi";
 import { toast } from "@/components/ui//useToast";
@@ -108,6 +109,28 @@ export function AguaReportForm() {
       isMounted = false;
     };
   }, [id, isEditMode, methods]);
+
+  // New report: propose the next numero propio (still editable). Skipped if
+  // the user already typed a value before the request came back.
+  useEffect(() => {
+    if (isEditMode) return;
+
+    let isMounted = true;
+
+    fetchNextNumeroPropio("report_water")
+      .then((next) => {
+        if (!isMounted) return;
+        if (methods.getFieldState("numero.propio").isDirty) return;
+        methods.setValue("numero.propio", next);
+      })
+      .catch((error) => {
+        console.error(error);
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [isEditMode, methods]);
 
   const handleBack = () => {
     navigate("/");

@@ -19,6 +19,19 @@ async function rollbackReport(reportId: string) {
   }
 }
 
+// numero_propio has a UNIQUE constraint in report_water and report_food.
+// Postgres reports a violation with code 23505; show a clear message instead.
+function detailErrorMessage(
+  prefix: string,
+  error: { code?: string; message: string },
+  numeroPropio: number,
+) {
+  if (error.code === "23505") {
+    return `Ya existe un informe con el número propio ${numeroPropio}`;
+  }
+  return prefix + error.message;
+}
+
 //WATER
 export async function createAguaReport(form: AguaReportFormData) {
   // 1. Insert into reports
@@ -73,7 +86,9 @@ export async function createAguaReport(form: AguaReportFormData) {
   if (error) {
     console.error(error);
     await rollbackReport(report.id);
-    throw new Error("Error insertando en report_water: " + error.message);
+    throw new Error(
+      detailErrorMessage("Error insertando en report_water: ", error, form.numero.propio),
+    );
   }
 
   return data;
@@ -122,7 +137,9 @@ export async function updateAguaReport(
 
   if (waterError) {
     console.error(waterError);
-    throw new Error("Error actualizando report_water: " + waterError.message);
+    throw new Error(
+      detailErrorMessage("Error actualizando report_water: ", waterError, form.numero.propio),
+    );
   }
 }
 
@@ -240,7 +257,9 @@ export async function createAlimentosReport(form: AlimentosReportFormData) {
   if (error) {
     console.error(error);
     await rollbackReport(report.id);
-    throw new Error("Error insertando en report_food: " + error.message);
+    throw new Error(
+      detailErrorMessage("Error insertando en report_food: ", error, form.numero.propio),
+    );
   }
 
   return data;
@@ -271,7 +290,9 @@ export async function updateAlimentosReport(
 
   if (foodError) {
     console.error(foodError);
-    throw new Error("Error actualizando report_food: " + foodError.message);
+    throw new Error(
+      detailErrorMessage("Error actualizando report_food: ", foodError, form.numero.propio),
+    );
   }
 }
 
@@ -457,4 +478,24 @@ export async function deleteReport(id: string): Promise<void> {
     console.error(error);
     throw new Error("Error al eliminar el informe: " + error.message);
   }
+}
+// Returns the next numero_propio for a report type: MAX(numero_propio) + 1 in
+// the type-specific table, or 1 if the table has no numbered rows yet.
+export async function fetchNextNumeroPropio(
+  table: "report_water" | "report_food",
+): Promise<number> {
+  const { data, error } = await supabase
+    .from(table)
+    .select("numero_propio")
+    .not("numero_propio", "is", null)
+    .order("numero_propio", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (error) {
+    console.error(error);
+    throw new Error("Error al obtener el próximo número propio: " + error.message);
+  }
+
+  return (data?.numero_propio ?? 0) + 1;
 }
