@@ -9,10 +9,13 @@ import { deleteReport, fetchAllReports } from "@/api/reportsApi";
 import { useClients } from "@/hooks/useClients";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { formatDate } from "@/hooks/useDate";
+import { usePagination } from "@/hooks/usePagination";
 
 import { Eye, Pencil, FileDown, Trash2, Loader2 } from "lucide-react";
 import { pdf } from "@react-pdf/renderer";
 import { ConfirmDialog } from "./ConfirmDialog";
+import { TablePagination } from "./TablePagination";
+import { DatePicker } from "./DatePicker";
 import { toast } from "./ui/useToast";
 import { PDFAgua } from "./reports/agua/PDFAgua";
 import { PDFAlimentos } from "./reports/alimentos/PDFAlimentos";
@@ -214,11 +217,13 @@ export function Reports() {
 
   const handleSearch = () => {
     setAppliedFilters({ ...searchFilters });
+    setPage(1);
   };
 
   const handleClearSearch = () => {
     setSearchFilters(emptyFilters);
     setAppliedFilters(null);
+    setPage(1);
   };
 
   const filteredReports = useMemo(() => {
@@ -226,6 +231,8 @@ export function Reports() {
     if (!appliedFilters) return reportsQuery.data;
     return filterReports(reportsQuery.data, appliedFilters, getClientName);
   }, [reportsQuery.data, appliedFilters, getClientName]);
+
+  const { pageItems, setPage, ...pagination } = usePagination(filteredReports);
 
   const queryClient = useQueryClient();
 
@@ -352,11 +359,12 @@ export function Reports() {
             >
               Fecha Desde
             </label>
-            <Input
+            <DatePicker
               id="fechaDesde"
-              type="date"
+              clearable
+              placeholder="Desde"
               value={searchFilters.fechaDesde}
-              onChange={(e) => handleSearchChange("fechaDesde", e.target.value)}
+              onChange={(value) => handleSearchChange("fechaDesde", value)}
             />
           </div>
 
@@ -367,11 +375,12 @@ export function Reports() {
             >
               Fecha Hasta
             </label>
-            <Input
+            <DatePicker
               id="fechaHasta"
-              type="date"
+              clearable
+              placeholder="Hasta"
               value={searchFilters.fechaHasta}
-              onChange={(e) => handleSearchChange("fechaHasta", e.target.value)}
+              onChange={(value) => handleSearchChange("fechaHasta", value)}
             />
           </div>
 
@@ -484,7 +493,7 @@ export function Reports() {
                   </td>
                 </tr>
               ) : (
-                filteredReports.map((item) => (
+                pageItems.map((item) => (
                   <tr key={item.report.id}>
                     {/* Cliente */}
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
@@ -620,6 +629,7 @@ export function Reports() {
             </tbody>
           </table>
         </div>
+        <TablePagination {...pagination} onPageChange={setPage} />
       </div>
 
       <ConfirmDialog

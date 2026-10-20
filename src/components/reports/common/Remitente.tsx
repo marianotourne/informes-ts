@@ -1,8 +1,9 @@
-import { useFormContext } from "react-hook-form";
+import { Controller, useFormContext } from "react-hook-form";
 import { Input } from "@/components/ui/input";
 import { useClients } from "@/hooks/useClients";
 import type { AguaReportFormData } from "@/lib/zodSchemas";
 import { ClientSelect } from "@/components/ClientSelect";
+import { DatePicker } from "@/components/DatePicker";
 
 type RemitenteProps = {
   // Extra fields specific to a report type, rendered at the end of the section
@@ -12,6 +13,7 @@ type RemitenteProps = {
 export function Remitente({ children }: RemitenteProps) {
   const {
     register,
+    control,
     setValue,
     watch,
     formState: { errors },
@@ -77,7 +79,17 @@ export function Remitente({ children }: RemitenteProps) {
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
             Fecha de recepción
           </label>
-          <Input type="date" {...register("remitente.fechaRecepcion")} />
+          <Controller
+            control={control}
+            name="remitente.fechaRecepcion"
+            render={({ field, fieldState }) => (
+              <DatePicker
+                value={field.value}
+                onChange={field.onChange}
+                invalid={fieldState.invalid}
+              />
+            )}
+          />
         </div>
 
         {/* FECHA INICIO */}
@@ -85,7 +97,17 @@ export function Remitente({ children }: RemitenteProps) {
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
             Fecha de inicio
           </label>
-          <Input type="date" {...register("remitente.fechaInicio")} />
+          <Controller
+            control={control}
+            name="remitente.fechaInicio"
+            render={({ field, fieldState }) => (
+              <DatePicker
+                value={field.value}
+                onChange={field.onChange}
+                invalid={fieldState.invalid}
+              />
+            )}
+          />
         </div>
 
         {/* DETALLE */}

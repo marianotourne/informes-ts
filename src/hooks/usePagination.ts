@@ -1,29 +1,25 @@
-import { useState, useMemo } from "react";
+import { useMemo, useState } from "react";
 
-interface UsePaginationProps<T> {
-  data: T[];
-  pageSize: number;
-}
+export const DEFAULT_PAGE_SIZE = 10;
 
-export function usePagination<T>({
-  data,
-  pageSize,
-}: UsePaginationProps<T>) {
-  const [currentPage, setCurrentPage] = useState(1);
+export function usePagination<T>(items: T[], pageSize = DEFAULT_PAGE_SIZE) {
+  const [page, setPage] = useState(1);
 
-  const totalPages = Math.ceil(data.length / pageSize);
+  const totalPages = Math.max(1, Math.ceil(items.length / pageSize));
+  // Si se eliminan ítems o cambia el filtro, la página no puede quedar fuera de rango
+  const currentPage = Math.min(page, totalPages);
 
-  const paginatedData = useMemo(() => {
-    return data.slice(
-      (currentPage - 1) * pageSize,
-      currentPage * pageSize
-    );
-  }, [data, currentPage, pageSize]);
+  const pageItems = useMemo(
+    () => items.slice((currentPage - 1) * pageSize, currentPage * pageSize),
+    [items, currentPage, pageSize],
+  );
 
   return {
-    currentPage,
-    setCurrentPage,
+    page: currentPage,
+    setPage,
     totalPages,
-    paginatedData,
+    pageItems,
+    pageSize,
+    totalItems: items.length,
   };
 }

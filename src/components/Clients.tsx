@@ -2,10 +2,12 @@ import { useMemo, useState } from "react";
 import { Loader2, Pencil, Plus, Search, Trash2 } from "lucide-react";
 import { ClientFormDialog } from "./ClientFormDialog";
 import { ConfirmDialog } from "./ConfirmDialog";
+import { TablePagination } from "./TablePagination";
 import { WhatsAppIcon } from "./icons/WhatsAppIcon";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { useClients } from "@/hooks/useClients";
+import { usePagination } from "@/hooks/usePagination";
 import { buildWhatsAppUrl } from "@/lib/utils";
 import type { Client } from "@/types/types";
 
@@ -46,6 +48,8 @@ export function Clients() {
     () => filterClients(clientsQuery.data ?? [], search),
     [clientsQuery.data, search],
   );
+
+  const { pageItems, setPage, ...pagination } = usePagination(filteredClients);
 
   const handleNewClient = () => {
     setEditingClient(null);
@@ -96,7 +100,10 @@ export function Clients() {
             type="text"
             placeholder="Razón social, teléfono, correo o dirección..."
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={(e) => {
+              setSearch(e.target.value);
+              setPage(1);
+            }}
             className="pl-10"
           />
         </div>
@@ -164,7 +171,7 @@ export function Clients() {
                   </td>
                 </tr>
               ) : (
-                filteredClients.map((client) => {
+                pageItems.map((client) => {
                   const whatsAppUrl = client.phone
                     ? buildWhatsAppUrl(client.phone)
                     : null;
@@ -227,6 +234,7 @@ export function Clients() {
             </tbody>
           </table>
         </div>
+        <TablePagination {...pagination} onPageChange={setPage} />
       </div>
 
       <ClientFormDialog
