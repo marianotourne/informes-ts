@@ -35,7 +35,9 @@ export function Recuento(props: RecuentoProps) {
     register,
     setValue,
     watch,
-    formState: { errors },
+    trigger,
+    clearErrors,
+    formState: { errors, isSubmitted },
   } = useFormContext<AlimentosReportFormData>();
 
   const menor10 = watch(`resultados.${name}.menor10`);
@@ -43,28 +45,41 @@ export function Recuento(props: RecuentoProps) {
   const esMenor = menor10 || menor1;
   const fieldErrors = errors.resultados?.[name];
 
+  // Set every field first and validate the group once at the end, so an
+  // intermediate state (e.g. base cleared, exponente still set) never leaves
+  // a stale error behind
+  const revalidate = () => {
+    if (isSubmitted) trigger(`resultados.${name}`);
+    else clearErrors(`resultados.${name}`);
+  };
+
   const clearValor = () => {
-    setValue(`resultados.${name}.base`, undefined, { shouldValidate: true });
-    setValue(`resultados.${name}.exponente`, undefined, { shouldValidate: true });
+    setValue(`resultados.${name}.base`, undefined);
+    setValue(`resultados.${name}.exponente`, undefined);
   };
 
   const handleMenor10 = (checked: boolean) => {
-    if (!checked) return;
-    clearValor();
-    if ("conMenor1" in props) setValue(`resultados.${props.name}.menor1`, false);
+    if (checked) {
+      clearValor();
+      if ("conMenor1" in props) setValue(`resultados.${props.name}.menor1`, false);
+    }
+    revalidate();
   };
 
   const handleMenor1 = (checked: boolean) => {
-    if (!checked) return;
-    clearValor();
-    setValue(`resultados.${name}.menor10`, false);
+    if (checked) {
+      clearValor();
+      setValue(`resultados.${name}.menor10`, false);
+    }
+    revalidate();
   };
 
   const handleClear = () => {
     clearValor();
     setValue(`resultados.${name}.menor10`, false);
     if ("conMenor1" in props) setValue(`resultados.${props.name}.menor1`, false);
-    setValue(`resultados.${name}.unidad`, "", { shouldValidate: true });
+    setValue(`resultados.${name}.unidad`, "");
+    revalidate();
   };
 
   const errorMessage =

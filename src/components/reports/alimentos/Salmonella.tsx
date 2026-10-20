@@ -11,6 +11,8 @@ export function Salmonella() {
     register,
     setValue,
     watch,
+    trigger,
+    clearErrors,
     formState: { errors, isSubmitted },
   } = useFormContext<AlimentosReportFormData>();
 
@@ -21,7 +23,9 @@ export function Salmonella() {
   const handleClear = () => {
     setValue("resultados.salmonella.presencia", "");
     setValue("resultados.salmonella.base", undefined);
-    setValue("resultados.salmonella.unidad", "", { shouldValidate: true });
+    setValue("resultados.salmonella.unidad", "");
+    if (isSubmitted) trigger("resultados.salmonella");
+    else clearErrors("resultados.salmonella");
   };
 
   return (
@@ -30,7 +34,7 @@ export function Salmonella() {
         Salmonella
       </p>
       <div className="flex flex-wrap items-center gap-6">
-        <div className="flex items-center gap-4">
+        <div className="flex flex-col gap-2">
           {presencias.map((presencia) => (
             <label key={presencia} className="flex items-center gap-2">
               <input
@@ -46,8 +50,7 @@ export function Salmonella() {
           ))}
         </div>
 
-        <div className="flex items-center gap-4">
-          <span className="text-sm text-gray-700 dark:text-gray-300">en</span>
+        <div className="flex flex-col gap-2">
           {bases.map((base) => (
             <label key={base} className="flex items-center gap-2">
               {/* setValueAs is ignored on radio inputs, so the number is set by hand */}
@@ -63,12 +66,14 @@ export function Salmonella() {
                 }
                 className="w-4 h-4"
               />
-              <span className="text-sm text-gray-700 dark:text-gray-300">{base}</span>
+              <span className="text-sm text-gray-700 dark:text-gray-300">
+                {base}
+              </span>
             </label>
           ))}
         </div>
 
-        <div className="flex items-center gap-4">
+        <div className="flex flex-col gap-2">
           {unidades.map((unidad) => (
             <label key={unidad} className="flex items-center gap-2">
               <input
@@ -77,7 +82,9 @@ export function Salmonella() {
                 {...register("resultados.salmonella.unidad")}
                 className="w-4 h-4"
               />
-              <span className="text-sm text-gray-700 dark:text-gray-300">{unidad}</span>
+              <span className="text-sm text-gray-700 dark:text-gray-300">
+                {unidad}
+              </span>
             </label>
           ))}
         </div>
@@ -92,7 +99,9 @@ export function Salmonella() {
         </button>
       </div>
       {errorMessage && (
-        <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errorMessage}</p>
+        <p className="mt-1 text-sm text-red-600 dark:text-red-400">
+          {errorMessage}
+        </p>
       )}
     </div>
   );
