@@ -49,7 +49,7 @@ export function ClientSelect({
         </Button>
       </PopoverTrigger>
 
-      <PopoverContent className="w-(--radix-popover-trigger-width) p-0 bg-white dark:bg-gray-800">
+      <PopoverContent className="w-(--radix-popover-trigger-width) p-0">
         <Command>
           <CommandInput placeholder="Buscar cliente..." />
 

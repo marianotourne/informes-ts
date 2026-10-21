@@ -1,4 +1,4 @@
-import { useFormContext } from "react-hook-form";
+import { FormRadioGroup } from "@/components/reports/common/FormRadioGroup";
 import type { AguaReportFormData } from "@/lib/zodSchemas";
 
 const options = [
@@ -8,8 +8,6 @@ const options = [
 ];
 
 export function Resultado() {
-  const { register } = useFormContext<AguaReportFormData>();
-
   return (
     <div className="flex flex-col mb-3 border-b border-solid border-gray-400 pb-2">
       <div>
@@ -17,19 +15,10 @@ export function Resultado() {
           Resultado
         </p>
       </div>
-      <div className="flex flex-wrap items-center gap-4">
-        {options.map((option) => (
-          <label key={option.value} className="flex items-center gap-2">
-            <input
-              type="radio"
-              {...register("conclusiones.resultado")}
-              value={option.value}
-              className="w-4 h-4"
-            />
-            <span className="text-sm text-gray-700 dark:text-gray-300">{option.label}</span>
-          </label>
-        ))}
-      </div>
+      <FormRadioGroup<AguaReportFormData>
+        name="conclusiones.resultado"
+        options={options}
+      />
     </div>
   );
 }

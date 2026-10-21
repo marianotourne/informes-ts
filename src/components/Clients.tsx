@@ -79,7 +79,11 @@ export function Clients() {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h1 className="text-4xl font-bold text-blue-600">Clientes</h1>
-        <Button onClick={handleNewClient} className="flex items-center gap-2">
+        <Button
+          variant="success"
+          onClick={handleNewClient}
+          className="flex items-center gap-2"
+        >
           <Plus className="w-5 h-5" />
           Nuevo Cliente
         </Button>
@@ -187,32 +191,42 @@ export function Clients() {
 
                       {/* Acciones */}
                       <td className="px-6 py-4 whitespace-nowrap text-right text-sm">
-                        <div className="flex items-center justify-end gap-3">
+                        <div className="flex items-center justify-end gap-1">
                           {whatsAppUrl && (
-                            <a
-                              href={whatsAppUrl}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              title="Abrir chat de WhatsApp"
-                              className="text-[#25D366] hover:text-[#1da851]"
+                            <Button
+                              asChild
+                              variant="ghost"
+                              size="icon-sm"
+                              className="text-[#25D366] hover:bg-[#25D366]/10 hover:text-[#1da851]"
                             >
-                              <WhatsAppIcon className="w-4 h-4" />
-                            </a>
+                              <a
+                                href={whatsAppUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                title="Abrir chat de WhatsApp"
+                              >
+                                <WhatsAppIcon className="w-4 h-4" />
+                              </a>
+                            </Button>
                           )}
 
-                          <button
+                          <Button
                             type="button"
+                            variant="ghost"
+                            size="icon-sm"
                             title="Modificar"
-                            className="text-gray-600 hover:text-gray-800 dark:text-gray-300 dark:hover:text-gray-100"
+                            className="text-muted-foreground"
                             onClick={() => handleEditClient(client)}
                           >
                             <Pencil className="w-4 h-4" />
-                          </button>
+                          </Button>
 
-                          <button
+                          <Button
                             type="button"
+                            variant="ghost"
+                            size="icon-sm"
                             title="Eliminar"
-                            className="text-red-600 hover:text-red-800 dark:text-red-300 dark:hover:text-red-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="text-destructive hover:bg-destructive/10 hover:text-destructive"
                             onClick={() => {
                               setClientToDelete(client);
                               setConfirmOpen(true);
@@ -224,7 +238,7 @@ export function Clients() {
                             ) : (
                               <Trash2 className="w-4 h-4" />
                             )}
-                          </button>
+                          </Button>
                         </div>
                       </td>
                     </tr>

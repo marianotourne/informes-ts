@@ -308,7 +308,7 @@ export function AlimentosReportForm() {
                 >
                   Cancelar
                 </Button>
-                <Button type="submit" disabled={isSubmitting}>
+                <Button type="submit" variant="success" disabled={isSubmitting}>
                   {isSubmitting
                     ? "Guardando..."
                     : isEditMode

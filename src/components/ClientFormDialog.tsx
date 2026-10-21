@@ -115,7 +115,7 @@ export function ClientFormDialog({
             >
               Cancelar
             </Button>
-            <Button type="submit" disabled={isSaving}>
+            <Button type="submit" variant="success" disabled={isSaving}>
               {isSaving && <Loader2 className="w-4 h-4 animate-spin" />}
               {isEdit ? "Guardar cambios" : "Agregar cliente"}
             </Button>

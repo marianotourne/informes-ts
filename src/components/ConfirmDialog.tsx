@@ -57,7 +57,6 @@ export function ConfirmDialog({
           <Button
             type="button"
             variant="destructive"
-            className="bg-red-600 hover:bg-red-700 dark:bg-red-600 dark:hover:bg-red-700"
             onClick={handleConfirm}
           >
             {confirmLabel}

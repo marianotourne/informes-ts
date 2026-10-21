@@ -1,5 +1,7 @@
 import { useFormContext } from "react-hook-form";
 import { X } from "lucide-react";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { FormRadioGroup } from "@/components/reports/common/FormRadioGroup";
 import type { AlimentosReportFormData } from "@/lib/zodSchemas";
 
 const presencias = ["Presencia", "Ausencia"];
@@ -8,7 +10,6 @@ const unidades = ["g", "ml"];
 
 export function Salmonella() {
   const {
-    register,
     setValue,
     watch,
     trigger,
@@ -34,60 +35,38 @@ export function Salmonella() {
         Salmonella
       </p>
       <div className="flex flex-wrap items-center gap-6">
-        <div className="flex flex-col gap-2">
-          {presencias.map((presencia) => (
-            <label key={presencia} className="flex items-center gap-2">
-              <input
-                type="radio"
-                value={presencia}
-                {...register("resultados.salmonella.presencia")}
-                className="w-4 h-4"
-              />
-              <span className="text-sm text-gray-700 dark:text-gray-300">
-                {presencia}
-              </span>
-            </label>
-          ))}
-        </div>
+        <FormRadioGroup<AlimentosReportFormData>
+          name="resultados.salmonella.presencia"
+          options={presencias}
+          className="flex-col items-start gap-2"
+        />
 
-        <div className="flex flex-col gap-2">
+        {/* base is a number, so it's converted by hand instead of via FormRadioGroup */}
+        <RadioGroup
+          name="resultados.salmonella.base"
+          value={selectedBase?.toString() ?? ""}
+          onValueChange={(value) =>
+            setValue("resultados.salmonella.base", Number(value), {
+              shouldValidate: isSubmitted,
+            })
+          }
+          className="flex flex-col gap-2"
+        >
           {bases.map((base) => (
             <label key={base} className="flex items-center gap-2">
-              {/* setValueAs is ignored on radio inputs, so the number is set by hand */}
-              <input
-                type="radio"
-                name="resultados.salmonella.base"
-                value={base}
-                checked={selectedBase === base}
-                onChange={() =>
-                  setValue("resultados.salmonella.base", base, {
-                    shouldValidate: isSubmitted,
-                  })
-                }
-                className="w-4 h-4"
-              />
+              <RadioGroupItem value={base.toString()} />
               <span className="text-sm text-gray-700 dark:text-gray-300">
                 {base}
               </span>
             </label>
           ))}
-        </div>
+        </RadioGroup>
 
-        <div className="flex flex-col gap-2">
-          {unidades.map((unidad) => (
-            <label key={unidad} className="flex items-center gap-2">
-              <input
-                type="radio"
-                value={unidad}
-                {...register("resultados.salmonella.unidad")}
-                className="w-4 h-4"
-              />
-              <span className="text-sm text-gray-700 dark:text-gray-300">
-                {unidad}
-              </span>
-            </label>
-          ))}
-        </div>
+        <FormRadioGroup<AlimentosReportFormData>
+          name="resultados.salmonella.unidad"
+          options={unidades}
+          className="flex-col items-start gap-2"
+        />
 
         <button
           type="button"

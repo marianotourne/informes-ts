@@ -1,6 +1,7 @@
 import { useFormContext } from "react-hook-form";
 import { X } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { FormRadioGroup } from "@/components/reports/common/FormRadioGroup";
 import type { AlimentosReportFormData } from "@/lib/zodSchemas";
 
 type RecuentoName =
@@ -143,21 +144,10 @@ export function Recuento(props: RecuentoProps) {
           <span className="text-sm text-gray-700 dark:text-gray-300">&lt; 10</span>
         </label>
 
-        <div className="flex items-center gap-4">
-          {unidades.map((unidad) => (
-            <label key={unidad.value} className="flex items-center gap-2">
-              <input
-                type="radio"
-                value={unidad.value}
-                {...register(`resultados.${name}.unidad`)}
-                className="w-4 h-4"
-              />
-              <span className="text-sm text-gray-700 dark:text-gray-300">
-                {unidad.label}
-              </span>
-            </label>
-          ))}
-        </div>
+        <FormRadioGroup<AlimentosReportFormData>
+          name={`resultados.${name}.unidad`}
+          options={unidades}
+        />
 
         <button
           type="button"

@@ -2,6 +2,13 @@ import { useState, useRef, useMemo, useCallback } from "react";
 import { ChevronDown, Search } from "lucide-react";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "./ui/select";
 import { useNavigate } from "react-router-dom";
 // import { cn } from "@/lib/utils";
 import type { FullReport, ReportType } from "@/types/types";
@@ -277,7 +284,7 @@ export function Reports() {
           onMouseEnter={() => setIsMenuOpen(true)}
           onMouseLeave={() => setIsMenuOpen(false)}
         >
-          <Button className="flex items-center gap-2">
+          <Button variant="success" className="flex items-center gap-2">
             {/* <Plus className="w-5 h-5" /> */}
             Nuevo Informe
             <ChevronDown className="w-4 h-4" />
@@ -335,21 +342,28 @@ export function Reports() {
             >
               Tipo de Informe
             </label>
-            <select
-              id="tipo"
-              value={searchFilters.tipo}
-              onChange={(e) =>
-                handleSearchChange("tipo", e.target.value as ReportType | "")
+            {/* Radix Select doesn't allow an empty item value, so "todos" stands for "" */}
+            <Select
+              value={searchFilters.tipo || "todos"}
+              onValueChange={(value) =>
+                handleSearchChange(
+                  "tipo",
+                  value === "todos" ? "" : (value as ReportType),
+                )
               }
-              className="h-9 w-full min-w-0 rounded-md border border-gray-300 dark:border-gray-600 bg-transparent px-3 py-1 text-base shadow-xs transition-[color,box-shadow] outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 md:text-sm dark:bg-input/30 dark:text-gray-300"
             >
-              <option value="">Todos</option>
-              {reportTypes.map((type) => (
-                <option key={type.value} value={type.value}>
-                  {type.label}
-                </option>
-              ))}
-            </select>
+              <SelectTrigger id="tipo" className="w-full">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent position="popper">
+                <SelectItem value="todos">Todos</SelectItem>
+                {reportTypes.map((type) => (
+                  <SelectItem key={type.value} value={type.value}>
+                    {type.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           <div className="md:col-span-1">
@@ -385,7 +399,7 @@ export function Reports() {
           </div>
 
           <div className="md:col-span-1 flex items-end gap-2">
-            <Button onClick={handleSearch} className="flex-1" variant="outline">
+            <Button onClick={handleSearch} className="flex-1">
               Buscar
             </Button>
             <Button
@@ -532,65 +546,40 @@ export function Reports() {
                             );
                             return <span className={classname}>{text}</span>;
                           })()
-                        : "—"}
+                        : ""}
                     </td>
 
                     {/* Acciones */}
-                    {/*                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm text-gray-900 dark:text-gray-100">
-                      <button
-                        type="button"
-                        className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 text-xs mr-3"
-                        onClick={() => handleViewReport(item.report.id)}
-                      >
-                        Ver
-                      </button>
-                      <button
-                        type="button"
-                        className="text-gray-600 hover:text-gray-800 dark:text-gray-300 dark:hover:text-gray-100 text-xs"
-                        onClick={() => handleEditReport(item.report.id)}
-                      >
-                        Editar
-                      </button>
-                      <button
-                        type="button"
-                        className="text-red-600 hover:text-red-800 dark:text-red-300 dark:hover:text-red-100 text-xs disabled:opacity-50 disabled:cursor-not-allowed"
-                        onClick={() => handleDeleteReport(item.report.id)}
-                        disabled={
-                          deleteMutation.isPending &&
-                          deleteMutation.variables === item.report.id
-                        }
-                      >
-                        {deleteMutation.isPending &&
-                        deleteMutation.variables === item.report.id
-                          ? "Eliminando..."
-                          : "Eliminar"}
-                      </button>
-                    </td> */}
-                    {/* Acciones */}
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm">
-                      <div className="flex items-center justify-end gap-3">
-                        <button
+                      <div className="flex items-center justify-end gap-1">
+                        <Button
                           type="button"
+                          variant="ghost"
+                          size="icon-sm"
                           title="Ver"
-                          className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
+                          className="text-primary hover:bg-primary/10 hover:text-primary"
                           onClick={() => handleViewReport(item)}
                         >
                           <Eye className="w-4 h-4" />
-                        </button>
+                        </Button>
 
-                        <button
+                        <Button
                           type="button"
+                          variant="ghost"
+                          size="icon-sm"
                           title="Editar"
-                          className="text-gray-600 hover:text-gray-800 dark:text-gray-300 dark:hover:text-gray-100"
+                          className="text-muted-foreground"
                           onClick={() => handleEditReport(item)}
                         >
                           <Pencil className="w-4 h-4" />
-                        </button>
+                        </Button>
 
-                        <button
+                        <Button
                           type="button"
+                          variant="ghost"
+                          size="icon-sm"
                           title="Descargar PDF"
-                          className="text-green-600 hover:text-green-800 dark:text-green-400 dark:hover:text-green-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                          className="text-success hover:bg-success/10 hover:text-success"
                           onClick={() => handleDownloadPdf(item)}
                           disabled={generatingPdfId === item.report.id}
                         >
@@ -599,12 +588,14 @@ export function Reports() {
                           ) : (
                             <FileDown className="w-4 h-4" />
                           )}
-                        </button>
+                        </Button>
 
-                        <button
+                        <Button
                           type="button"
+                          variant="ghost"
+                          size="icon-sm"
                           title="Eliminar"
-                          className="text-red-600 hover:text-red-800 dark:text-red-300 dark:hover:text-red-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                          className="text-destructive hover:bg-destructive/10 hover:text-destructive"
                           onClick={() => {
                             setReportToDelete(item);
                             setConfirmOpen(true);
@@ -620,7 +611,7 @@ export function Reports() {
                           ) : (
                             <Trash2 className="w-4 h-4" />
                           )}
-                        </button>
+                        </Button>
                       </div>
                     </td>
                   </tr>

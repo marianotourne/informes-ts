@@ -79,7 +79,7 @@ export function DatePicker({
       </div>
 
       <PopoverContent
-        className="w-auto p-0 bg-white dark:bg-gray-800"
+        className="w-auto p-0"
         align="start"
       >
         <Calendar

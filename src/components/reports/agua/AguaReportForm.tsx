@@ -216,7 +216,7 @@ export function AguaReportForm() {
                 >
                   Cancelar
                 </Button>
-                <Button type="submit" disabled={isSubmitting}>
+                <Button type="submit" variant="success" disabled={isSubmitting}>
                   {isSubmitting
                     ? "Guardando..."
                     : isEditMode

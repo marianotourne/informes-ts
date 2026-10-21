@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useFormContext } from "react-hook-form";
 import { Input } from "@/components/ui/input";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import type { AguaReportFormData } from "@/lib/zodSchemas";
 
 export function Aerobias() {
@@ -44,6 +45,12 @@ export function Aerobias() {
     setValue("resultados.aerobias", value, { shouldValidate: true });
   };
 
+  const mode = customSelected
+    ? "custom"
+    : aerobiasValue === ">500" || aerobiasValue === "<10"
+      ? aerobiasValue
+      : "";
+
   return (
     <div className="flex flex-col mb-3 border-b border-solid border-gray-400 pb-2">
       <div>
@@ -51,15 +58,18 @@ export function Aerobias() {
           Recuento de Aerobias Mesófilas
         </p>
       </div>
-      <div className="flex flex-wrap items-center gap-4">
+      <RadioGroup
+        name="aerobias-mode"
+        value={mode}
+        onValueChange={(value) =>
+          value === "custom"
+            ? handleSelectCustom()
+            : handleSelectFixed(value as ">500" | "<10")
+        }
+        className="flex flex-wrap items-center gap-4"
+      >
         <label className="flex items-center gap-2">
-          <input
-            type="radio"
-            name="aerobias-mode"
-            checked={customSelected}
-            onChange={handleSelectCustom}
-            className="w-4 h-4"
-          />
+          <RadioGroupItem value="custom" />
           {customSelected && (
             <Input
               type="number"
@@ -74,31 +84,19 @@ export function Aerobias() {
         </label>
 
         <label className="flex items-center gap-2">
-          <input
-            type="radio"
-            name="aerobias-mode"
-            checked={!customSelected && aerobiasValue === ">500"}
-            onChange={() => handleSelectFixed(">500")}
-            className="w-4 h-4"
-          />
+          <RadioGroupItem value=">500" />
           <span className="text-sm text-gray-700 dark:text-gray-300">
             &gt;500 UFC / ml
           </span>
         </label>
 
         <label className="flex items-center gap-2">
-          <input
-            type="radio"
-            name="aerobias-mode"
-            checked={!customSelected && aerobiasValue === "<10"}
-            onChange={() => handleSelectFixed("<10")}
-            className="w-4 h-4"
-          />
+          <RadioGroupItem value="<10" />
           <span className="text-sm text-gray-700 dark:text-gray-300">
             &lt;10 UFC / ml
           </span>
         </label>
-      </div>
+      </RadioGroup>
     </div>
   );
 }
