@@ -33,6 +33,20 @@ export function buildAlimentosReportFilename(
 
   return `${safe}.pdf`;
 }
+export function buildNutricionReportFilename(
+  numeroPropio: number | null | undefined,
+  clientName: string,
+): string {
+  const numero = numeroPropio ?? "SN"; // "SN" = Sin Número, por si no está cargado
+  const nombre = clientName || "Sin cliente";
+
+  const raw = `ANÁLISIS NUTRICIÓN ANIMAL ${numero} - ${nombre}`;
+
+  // Sanitiza caracteres inválidos en nombres de archivo (Windows/Mac/Linux)
+  const safe = raw.replace(/[/\\:*?"<>|]/g, "");
+
+  return `${safe}.pdf`;
+}
 
 // Quita el "15" de un celular argentino en formato local (código de área de 2 a 4 dígitos + 15 + número).
 // Devuelve los 10 dígitos de código de área + número, o null si no tiene esa forma.

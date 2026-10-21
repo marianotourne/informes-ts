@@ -1,13 +1,25 @@
 import { supabase } from "../utils/supabase";
-import type { AguaReportFormData, AlimentosReportFormData } from "../lib/zodSchemas";
+import type {
+  AguaReportFormData,
+  AlimentosReportFormData,
+  NutricionReportFormData,
+} from "../lib/zodSchemas";
 import type {
   Report,
   ReportWater,
   ReportFood,
+  ReportAnimalNutrition,
   FullReport,
   FullWaterReport,
   FullFoodReport,
+  FullNutritionReport,
 } from "../types/types";
+import {
+  genericosTalCualSeca,
+  genericosUnValor,
+  talCualSecaCampos,
+  unValorCampos,
+} from "../lib/nutricion";
 
 // Reports are saved in two steps (reports + the type-specific table) and Supabase
 // has no client-side transactions. If the second insert fails, this deletes the
@@ -19,7 +31,7 @@ async function rollbackReport(reportId: string) {
   }
 }
 
-// numero_propio has a UNIQUE constraint in report_water and report_food.
+// numero_propio has a UNIQUE constraint in report_water, report_food and report_animal_nutrition.
 // Postgres reports a violation with code 23505; show a clear message instead.
 function detailErrorMessage(
   prefix: string,
@@ -298,6 +310,131 @@ export async function updateAlimentosReport(
 
 
 
+//ANIMAL NUTRITION
+// Maps the nutrition form to report_animal_nutrition columns (shared by create and update).
+// Empty results go to the DB as null.
+function mapNutricionFormToRow(form: NutricionReportFormData) {
+  const r = form.resultados;
+  const row: Record<string, string | number | null> = {
+    // Number section
+    numero_laboratorio: form.numero.laboratorio,
+    numero_propio: form.numero.propio,
+
+    // Sender section
+    orden: form.remitente.orden,
+    fecha_recepcion: form.remitente.fechaRecepcion,
+    tipo_muestra: form.remitente.tipo,
+    detalle: form.remitente.detalle,
+
+    // Results section
+    actividad_ureasica_muestra: r.actividadUreasica.muestra ?? null,
+    actividad_ureasica_testigo: r.actividadUreasica.testigo ?? null,
+
+    // Conclusions
+    fecha_informe: form.conclusiones.fechaInforme,
+  };
+
+  for (const { name, column } of talCualSecaCampos) {
+    row[`${column}_tal_cual`] = r[name].talCual ?? null;
+    row[`${column}_seca`] = r[name].seca ?? null;
+  }
+  for (const { name, column } of unValorCampos) {
+    row[column] = r[name] ?? null;
+  }
+  for (const g of genericosUnValor) {
+    row[`${g}_name`] = r[g].name;
+    row[`${g}_number`] = r[g].number ?? null;
+  }
+  for (const g of genericosTalCualSeca) {
+    row[`${g}_name`] = r[g].name;
+    row[`${g}_tal_cual`] = r[g].talCual ?? null;
+    row[`${g}_seca`] = r[g].seca ?? null;
+  }
+
+  return row;
+}
+
+export async function createNutricionReport(form: NutricionReportFormData) {
+  // 1. Insert into reports
+  const { data: report, error: reportError } = await supabase
+    .from("reports")
+    .insert({
+      // client_id: UUID from the clients table
+      client_id: form.remitente.id,
+      // report_type_id: id from the report_types table (3 = animal nutrition)
+      report_type_id: 3,
+    })
+    .select()
+    .single();
+
+  if (reportError) {
+    console.error(reportError);
+    throw new Error("Error insertando en reports: " + reportError.message);
+  }
+
+  // 2. Insert into report_animal_nutrition
+  const { data, error } = await supabase
+    .from("report_animal_nutrition")
+    .insert({
+      // FK to reports
+      report_id: report.id,
+      ...mapNutricionFormToRow(form),
+    })
+    .select()
+    .single();
+
+  if (error) {
+    console.error(error);
+    await rollbackReport(report.id);
+    throw new Error(
+      detailErrorMessage(
+        "Error insertando en report_animal_nutrition: ",
+        error,
+        form.numero.propio,
+      ),
+    );
+  }
+
+  return data;
+}
+
+export async function updateNutricionReport(
+  id: string,
+  form: NutricionReportFormData,
+): Promise<void> {
+  // 1. Update reports (only client_id changes, the type should not change)
+  const { error: reportError } = await supabase
+    .from("reports")
+    .update({
+      client_id: form.remitente.id,
+    })
+    .eq("id", id);
+
+  if (reportError) {
+    console.error(reportError);
+    throw new Error("Error actualizando reports: " + reportError.message);
+  }
+
+  // 2. Update report_animal_nutrition
+  const { error: nutritionError } = await supabase
+    .from("report_animal_nutrition")
+    .update(mapNutricionFormToRow(form))
+    .eq("report_id", id);
+
+  if (nutritionError) {
+    console.error(nutritionError);
+    throw new Error(
+      detailErrorMessage(
+        "Error actualizando report_animal_nutrition: ",
+        nutritionError,
+        form.numero.propio,
+      ),
+    );
+  }
+}
+
+
+
 // Returns only water reports along with their report_water data
 export async function fetchWaterReports(): Promise<FullWaterReport[]> {
   // 1. Fetch water-type reports
@@ -396,14 +533,65 @@ export async function fetchFoodReports(): Promise<FullFoodReport[]> {
   }));
 }
 
-// Returns water and food reports together, newest first
+// Returns only animal nutrition reports along with their report_animal_nutrition data
+export async function fetchNutritionReports(): Promise<FullNutritionReport[]> {
+  // 1. Fetch animal nutrition reports
+  const { data: reports, error: reportsError } = await supabase
+    .from("reports")
+    .select("*")
+    .eq("report_type_id", 3)
+    .order("created_at", { ascending: false });
+
+  if (reportsError) {
+    console.error(reportsError);
+    throw new Error("Error cargando reports: " + reportsError.message);
+  }
+
+  if (!reports || reports.length === 0) {
+    return [];
+  }
+
+  const reportIds = reports.map((r) => r.id);
+
+  // 2. Fetch the matching report_animal_nutrition rows
+  const { data: nutritions, error: nutritionsError } = await supabase
+    .from("report_animal_nutrition")
+    .select("*")
+    .in("report_id", reportIds);
+
+  if (nutritionsError) {
+    console.error(nutritionsError);
+    throw new Error(
+      "Error cargando report_animal_nutrition: " + nutritionsError.message,
+    );
+  }
+
+  const nutritionsByReportId = new Map<string, ReportAnimalNutrition>();
+  (nutritions ?? []).forEach((n) => {
+    nutritionsByReportId.set(n.report_id, n as ReportAnimalNutrition);
+  });
+
+  return (reports as Report[]).map((report) => ({
+    type: "nutricion",
+    report,
+    nutrition:
+      nutritionsByReportId.get(report.id) ??
+      ({
+        report_id: report.id,
+        updated_at: report.created_at,
+      } as ReportAnimalNutrition),
+  }));
+}
+
+// Returns water, food and animal nutrition reports together, newest first
 export async function fetchAllReports(): Promise<FullReport[]> {
-  const [water, food] = await Promise.all([
+  const [water, food, nutrition] = await Promise.all([
     fetchWaterReports(),
     fetchFoodReports(),
+    fetchNutritionReports(),
   ]);
 
-  return [...water, ...food].sort((a, b) =>
+  return [...water, ...food, ...nutrition].sort((a, b) =>
     b.report.created_at.localeCompare(a.report.created_at),
   );
 }
@@ -468,6 +656,40 @@ export async function fetchFoodReportById(id: string): Promise<FullFoodReport> {
   };
 }
 
+export async function fetchNutritionReportById(
+  id: string,
+): Promise<FullNutritionReport> {
+  const { data: report, error: reportError } = await supabase
+    .from("reports")
+    .select("*")
+    .eq("id", id)
+    .single();
+
+  if (reportError) {
+    console.error(reportError);
+    throw new Error("Error cargando el informe: " + reportError.message);
+  }
+
+  const { data: nutrition, error: nutritionError } = await supabase
+    .from("report_animal_nutrition")
+    .select("*")
+    .eq("report_id", id)
+    .single();
+
+  if (nutritionError) {
+    console.error(nutritionError);
+    throw new Error(
+      "Error cargando report_animal_nutrition: " + nutritionError.message,
+    );
+  }
+
+  return {
+    type: "nutricion",
+    report: report as Report,
+    nutrition: nutrition as ReportAnimalNutrition,
+  };
+}
+
 export async function deleteReport(id: string): Promise<void> {
   const { error } = await supabase
     .from("reports")
@@ -482,7 +704,7 @@ export async function deleteReport(id: string): Promise<void> {
 // Returns the next numero_propio for a report type: MAX(numero_propio) + 1 in
 // the type-specific table, or 1 if the table has no numbered rows yet.
 export async function fetchNextNumeroPropio(
-  table: "report_water" | "report_food",
+  table: "report_water" | "report_food" | "report_animal_nutrition",
 ): Promise<number> {
   const { data, error } = await supabase
     .from(table)

@@ -137,5 +137,82 @@ export const alimentosReportSchema = z.object({
   }),
 });
 
+// Nutrition results are optional percentages; an empty value means "not analyzed"
+const porcentaje = z.number().min(0, "Mínimo 0").max(100, "Máximo 100").optional();
+
+// "Sobre sustancia" pair: as received (tal cual) and on dry matter (seca)
+const talCualSecaSchema = z.object({
+  talCual: porcentaje,
+  seca: porcentaje,
+});
+
+// A free-form analysis needs a name as soon as it has a result
+const validarGenerico = (
+  g: { name: string; number?: number; talCual?: number; seca?: number },
+  ctx: z.RefinementCtx,
+) => {
+  const tieneValor = [g.number, g.talCual, g.seca].some((v) => v !== undefined);
+  if (tieneValor && !g.name.trim()) {
+    ctx.addIssue({ code: "custom", path: ["name"], message: "Cargá el nombre del análisis" });
+  }
+};
+
+const genericoUnValorSchema = z
+  .object({ name: z.string(), number: porcentaje })
+  .superRefine(validarGenerico);
+
+const genericoTalCualSecaSchema = z
+  .object({ name: z.string(), talCual: porcentaje, seca: porcentaje })
+  .superRefine(validarGenerico);
+
+export const nutricionReportSchema = z.object({
+  numero: z.object({
+    laboratorio: z.number().int("Debe ser un número entero").min(1, "Debe ser un número positivo"),
+    propio: z.number().int("Debe ser un número entero").min(1, "Debe ser un número positivo"),
+  }),
+  remitente: z.object({
+    id: z.string().uuid(),
+    orden: z
+      .number({ error: "El número de orden es requerido" })
+      .int("Debe ser un número entero")
+      .min(1, "Debe ser un número positivo"),
+    fechaRecepcion: z.string().min(1, "La fecha de recepción es requerida"),
+    tipo: z.string().min(1, "El tipo de muestra es requerido"),
+    detalle: z.string().min(1, "El detalle es requerido"),
+  }),
+  resultados: z.object({
+    humedad: talCualSecaSchema,
+    materiaSeca: talCualSecaSchema,
+    proteinaBruta: talCualSecaSchema,
+    fdn: talCualSecaSchema,
+    fda: talCualSecaSchema,
+    nitrogeno: talCualSecaSchema,
+    extractoEtereo: talCualSecaSchema,
+    digestibilidad: porcentaje,
+    energiaMetabolica: porcentaje,
+    ph: z.number().min(0, "Mínimo 0").max(14, "Máximo 14").optional(),
+    proteinaVerdadera: porcentaje,
+    nnp: porcentaje,
+    actividadUreasica: z.object({
+      muestra: porcentaje,
+      testigo: porcentaje,
+    }),
+    generic01: genericoUnValorSchema,
+    generic02: genericoUnValorSchema,
+    generic03: genericoUnValorSchema,
+    generic04: genericoUnValorSchema,
+    generic05: genericoUnValorSchema,
+    generic11: genericoTalCualSecaSchema,
+    generic12: genericoTalCualSecaSchema,
+    generic13: genericoTalCualSecaSchema,
+    generic14: genericoTalCualSecaSchema,
+    generic15: genericoTalCualSecaSchema,
+  }),
+  conclusiones: z.object({
+    fechaInforme: z.string().min(1, "La fecha de informe es requerida"),
+  }),
+});
+
 export type AguaReportFormData = z.infer<typeof aguaReportSchema>;
 export type AlimentosReportFormData = z.infer<typeof alimentosReportSchema>;
+export type NutricionReportFormData = z.infer<typeof nutricionReportSchema>;

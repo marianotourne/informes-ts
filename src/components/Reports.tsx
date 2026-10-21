@@ -26,9 +26,11 @@ import { DatePicker } from "./DatePicker";
 import { toast } from "./ui/useToast";
 import { PDFAgua } from "./reports/agua/PDFAgua";
 import { PDFAlimentos } from "./reports/alimentos/PDFAlimentos";
+import { PDFNutricion } from "./reports/nutricion/PDFNutricion";
 import {
   buildAguaReportFilename,
   buildAlimentosReportFilename,
+  buildNutricionReportFilename,
 } from "@/lib/utils";
 
 const reportTypes: Array<{ value: ReportType; label: string }> = [
@@ -83,9 +85,62 @@ const emptyFilters: SearchFilters = {
 const getReportTypeLabel = (type: ReportType) =>
   reportTypes.find((t) => t.value === type)?.label ?? type;
 
-// Type-specific row (report_water / report_food); both share the numero, detalle and fecha_informe columns
-const getDetail = (item: FullReport) =>
-  item.type === "agua" ? item.water : item.food;
+// Type-specific row (report_water / report_food / report_animal_nutrition); all share the numero, detalle and fecha_informe columns
+const getDetail = (item: FullReport) => {
+  switch (item.type) {
+    case "agua":
+      return item.water;
+    case "alimentos":
+      return item.food;
+    case "nutricion":
+      return item.nutrition;
+  }
+};
+
+// PDF document and filename for each report type
+const getPdf = (item: FullReport, clientName: string) => {
+  switch (item.type) {
+    case "agua":
+      return {
+        document: (
+          <PDFAgua
+            report={item.report}
+            water={item.water}
+            clientName={clientName}
+          />
+        ),
+        filename: buildAguaReportFilename(item.water.numero_propio, clientName),
+      };
+    case "alimentos":
+      return {
+        document: (
+          <PDFAlimentos
+            report={item.report}
+            food={item.food}
+            clientName={clientName}
+          />
+        ),
+        filename: buildAlimentosReportFilename(
+          item.food.numero_propio,
+          clientName,
+        ),
+      };
+    case "nutricion":
+      return {
+        document: (
+          <PDFNutricion
+            report={item.report}
+            nutrition={item.nutrition}
+            clientName={clientName}
+          />
+        ),
+        filename: buildNutricionReportFilename(
+          item.nutrition.numero_propio,
+          clientName,
+        ),
+      };
+  }
+};
 
 const getReportDate = (item: FullReport): string => {
   const raw = getDetail(item).fecha_informe ?? item.report.created_at;
@@ -157,29 +212,13 @@ export function Reports() {
     setGeneratingPdfId(item.report.id);
     try {
       const clientName = getClientName(item.report.client_id);
-      const blob = await pdf(
-        item.type === "agua" ? (
-          <PDFAgua
-            report={item.report}
-            water={item.water}
-            clientName={clientName}
-          />
-        ) : (
-          <PDFAlimentos
-            report={item.report}
-            food={item.food}
-            clientName={clientName}
-          />
-        ),
-      ).toBlob();
+      const { document: pdfDocument, filename } = getPdf(item, clientName);
+      const blob = await pdf(pdfDocument).toBlob();
 
       const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = url;
-      link.download =
-        item.type === "agua"
-          ? buildAguaReportFilename(item.water.numero_propio, clientName)
-          : buildAlimentosReportFilename(item.food.numero_propio, clientName);
+      link.download = filename;
       link.click();
       URL.revokeObjectURL(url);
     } catch (error) {
@@ -202,13 +241,10 @@ export function Reports() {
         navigate("/reports/agua/new");
         break;
       case "alimentos":
-        // TODO: Crear ruta para alimentos
-        // console.log("Crear informe de alimentos");
         navigate("/reports/alimentos/new");
         break;
       case "nutricion":
-        // TODO: Crear ruta para nutrición
-        console.log("Crear informe de nutrición");
+        navigate("/reports/nutricion/new");
         break;
       default:
         break;

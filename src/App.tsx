@@ -9,6 +9,8 @@ import { ViewReportAgua } from "./components/reports/agua/ViewReportAgua";
 import { Toaster } from "@/components/ui/Toaster";
 import { AlimentosReportForm } from "./components/reports/alimentos/AlimentosReportForm";
 import { ViewReportAlimentos } from "./components/reports/alimentos/ViewReportAlimentos";
+import { NutricionReportForm } from "./components/reports/nutricion/NutricionReportForm";
+import { ViewReportNutricion } from "./components/reports/nutricion/ViewReportNutricion";
 
 function App() {
   return (
@@ -85,6 +87,31 @@ function App() {
           element={
             <ProtectedRoute>
               <ViewReportAlimentos />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/reports/nutricion/new"
+          element={
+            <ProtectedRoute>
+              <NutricionReportForm />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/reports/nutricion/:id/edit"
+          element={
+            <ProtectedRoute>
+              <NutricionReportForm />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/reports/nutricion/:id/view"
+          element={
+            <ProtectedRoute>
+              <ViewReportNutricion />
             </ProtectedRoute>
           }
         />
