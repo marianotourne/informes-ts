@@ -18,61 +18,19 @@ create table if not exists public.report_animal_nutrition (
   tipo_muestra text,
   detalle text,
 
-  -- Resultados sobre sustancia: tal cual / seca
-  humedad_tal_cual numeric,
-  humedad_seca numeric,
-  materia_seca_tal_cual numeric,
-  materia_seca_seca numeric,
-  proteina_bruta_tal_cual numeric,
-  proteina_bruta_seca numeric,
-  fdn_tal_cual numeric,
-  fdn_seca numeric,
-  fda_tal_cual numeric,
-  fda_seca numeric,
-  nitrogeno_tal_cual numeric,
-  nitrogeno_seca numeric,
-  extracto_etereo_tal_cual numeric,
-  extracto_etereo_seca numeric,
-
-  -- Resultados de un solo valor
-  digestibilidad numeric,
-  energia_metabolica numeric,
-  ph numeric,
-  proteina_verdadera numeric,
-  nnp numeric,
-
-  -- Actividad ureásica (delta pH): muestra / soja natural testigo
-  actividad_ureasica_muestra numeric,
-  actividad_ureasica_testigo numeric,
-
-  -- Análisis libres de un valor (nombre + resultado)
-  generic01_name text,
-  generic01_number numeric,
-  generic02_name text,
-  generic02_number numeric,
-  generic03_name text,
-  generic03_number numeric,
-  generic04_name text,
-  generic04_number numeric,
-  generic05_name text,
-  generic05_number numeric,
-
-  -- Análisis libres tal cual / seca (nombre + dos resultados)
-  generic11_name text,
-  generic11_tal_cual numeric,
-  generic11_seca numeric,
-  generic12_name text,
-  generic12_tal_cual numeric,
-  generic12_seca numeric,
-  generic13_name text,
-  generic13_tal_cual numeric,
-  generic13_seca numeric,
-  generic14_name text,
-  generic14_tal_cual numeric,
-  generic14_seca numeric,
-  generic15_name text,
-  generic15_tal_cual numeric,
-  generic15_seca numeric,
+  -- Resultados: el objeto `resultados` del formulario tal cual (ver NutricionResultados
+  -- en src/lib/zodSchemas.ts). Solo se usa para el PDF y para editar, no para consultas.
+  -- Ejemplo:
+  --   {
+  --     "humedad": { "talCual": 12.5, "seca": 0 },
+  --     "ph": 6.8,
+  --     "actividadUreasica": { "muestra": 0.05, "testigo": 2.1 },
+  --     "otrosSobreSustancia": [{ "nombre": "Cenizas (%)", "talCual": 7.2, "seca": 8.1 }],
+  --     "otros": [{ "nombre": "Calcio (%)", "valor": 0.9 }]
+  --   }
+  -- Los valores vacíos no se guardan; al leer se completan con vacíos.
+  resultados jsonb not null default '{}'::jsonb
+    check (jsonb_typeof(resultados) = 'object'),
 
   -- Conclusiones
   fecha_informe date,

@@ -137,7 +137,8 @@ export const alimentosReportSchema = z.object({
   }),
 });
 
-// Nutrition results are optional percentages; an empty value means "not analyzed"
+// Nutrition results are optional percentages; an empty value means "not analyzed".
+// The whole `resultados` object is saved as jsonb, with the same shape as the form.
 const porcentaje = z.number().min(0, "Mínimo 0").max(100, "Máximo 100").optional();
 
 // "Sobre sustancia" pair: as received (tal cual) and on dry matter (seca)
@@ -146,24 +147,20 @@ const talCualSecaSchema = z.object({
   seca: porcentaje,
 });
 
-// A free-form analysis needs a name as soon as it has a result
-const validarGenerico = (
-  g: { name: string; number?: number; talCual?: number; seca?: number },
-  ctx: z.RefinementCtx,
-) => {
-  const tieneValor = [g.number, g.talCual, g.seca].some((v) => v !== undefined);
-  if (tieneValor && !g.name.trim()) {
-    ctx.addIssue({ code: "custom", path: ["name"], message: "Cargá el nombre del análisis" });
-  }
-};
+// Free-form analyses: rows exist only once added, so they need a name and a result
+const nombreAnalisis = z.string().trim().min(1, "Cargá el nombre del análisis");
 
-const genericoUnValorSchema = z
-  .object({ name: z.string(), number: porcentaje })
-  .superRefine(validarGenerico);
+const otroAnalisisSchema = z.object({
+  nombre: nombreAnalisis,
+  valor: porcentaje.refine((v) => v !== undefined, "Cargá el resultado"),
+});
 
-const genericoTalCualSecaSchema = z
-  .object({ name: z.string(), talCual: porcentaje, seca: porcentaje })
-  .superRefine(validarGenerico);
+const otroSobreSustanciaSchema = z
+  .object({ nombre: nombreAnalisis, talCual: porcentaje, seca: porcentaje })
+  .refine((o) => o.talCual !== undefined || o.seca !== undefined, {
+    path: ["talCual"],
+    message: "Cargá al menos un resultado",
+  });
 
 export const nutricionReportSchema = z.object({
   numero: z.object({
@@ -197,16 +194,8 @@ export const nutricionReportSchema = z.object({
       muestra: porcentaje,
       testigo: porcentaje,
     }),
-    generic01: genericoUnValorSchema,
-    generic02: genericoUnValorSchema,
-    generic03: genericoUnValorSchema,
-    generic04: genericoUnValorSchema,
-    generic05: genericoUnValorSchema,
-    generic11: genericoTalCualSecaSchema,
-    generic12: genericoTalCualSecaSchema,
-    generic13: genericoTalCualSecaSchema,
-    generic14: genericoTalCualSecaSchema,
-    generic15: genericoTalCualSecaSchema,
+    otrosSobreSustancia: z.array(otroSobreSustanciaSchema),
+    otros: z.array(otroAnalisisSchema),
   }),
   conclusiones: z.object({
     fechaInforme: z.string().min(1, "La fecha de informe es requerida"),
@@ -216,3 +205,5 @@ export const nutricionReportSchema = z.object({
 export type AguaReportFormData = z.infer<typeof aguaReportSchema>;
 export type AlimentosReportFormData = z.infer<typeof alimentosReportSchema>;
 export type NutricionReportFormData = z.infer<typeof nutricionReportSchema>;
+// Stored as-is in report_animal_nutrition.resultados (jsonb)
+export type NutricionResultados = NutricionReportFormData["resultados"];

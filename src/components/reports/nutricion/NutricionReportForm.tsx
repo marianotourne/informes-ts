@@ -9,12 +9,7 @@ import {
   nutricionReportSchema,
   type NutricionReportFormData,
 } from "@/lib/zodSchemas";
-import {
-  genericosTalCualSeca,
-  genericosUnValor,
-  talCualSecaCampos,
-  unValorCampos,
-} from "@/lib/nutricion";
+import { completarResultados, emptyResultados } from "@/lib/nutricion";
 
 import { RemitenteNutricion } from "./RemitenteNutricion";
 import { ResultadosNutricion } from "./ResultadosNutricion";
@@ -29,46 +24,6 @@ import { toast } from "@/components/ui//useToast";
 import type { FullNutritionReport } from "@/types/types";
 import { Numeros } from "../common/Numeros";
 
-type Resultados = NutricionReportFormData["resultados"];
-
-// Builds `resultados` from the field lists; `valor` reads each value (empty
-// values come in as undefined for a new report, or from the DB row on edit)
-const buildResultados = (
-  valor: (column: string) => number | undefined,
-  nombre: (generic: string) => string,
-): Resultados =>
-  ({
-    ...Object.fromEntries(
-      talCualSecaCampos.map(({ name, column }) => [
-        name,
-        { talCual: valor(`${column}_tal_cual`), seca: valor(`${column}_seca`) },
-      ]),
-    ),
-    ...Object.fromEntries(
-      unValorCampos.map(({ name, column }) => [name, valor(column)]),
-    ),
-    actividadUreasica: {
-      muestra: valor("actividad_ureasica_muestra"),
-      testigo: valor("actividad_ureasica_testigo"),
-    },
-    ...Object.fromEntries(
-      genericosUnValor.map((g) => [
-        g,
-        { name: nombre(g), number: valor(`${g}_number`) },
-      ]),
-    ),
-    ...Object.fromEntries(
-      genericosTalCualSeca.map((g) => [
-        g,
-        {
-          name: nombre(g),
-          talCual: valor(`${g}_tal_cual`),
-          seca: valor(`${g}_seca`),
-        },
-      ]),
-    ),
-  }) as Resultados;
-
 const emptyValues: NutricionReportFormData = {
   numero: {
     laboratorio: 0,
@@ -81,10 +36,7 @@ const emptyValues: NutricionReportFormData = {
     tipo: "",
     detalle: "",
   },
-  resultados: buildResultados(
-    () => undefined,
-    () => "",
-  ),
+  resultados: emptyResultados(),
   conclusiones: {
     fechaInforme: "",
   },
@@ -93,33 +45,23 @@ const emptyValues: NutricionReportFormData = {
 const mapReportToFormValues = ({
   report,
   nutrition,
-}: FullNutritionReport): NutricionReportFormData => {
-  const row = nutrition as unknown as Record<string, unknown>;
-
-  return {
-    numero: {
-      laboratorio: nutrition.numero_laboratorio ?? 0,
-      propio: nutrition.numero_propio ?? 0,
-    },
-    remitente: {
-      id: report.client_id ?? "",
-      orden: nutrition.orden ?? 0,
-      fechaRecepcion: nutrition.fecha_recepcion ?? "",
-      tipo: nutrition.tipo_muestra ?? "",
-      detalle: nutrition.detalle ?? "",
-    },
-    resultados: buildResultados(
-      (column) =>
-        row[column] === null || row[column] === undefined
-          ? undefined
-          : Number(row[column]),
-      (generic) => (row[`${generic}_name`] as string | null) ?? "",
-    ),
-    conclusiones: {
-      fechaInforme: nutrition.fecha_informe ?? "",
-    },
-  };
-};
+}: FullNutritionReport): NutricionReportFormData => ({
+  numero: {
+    laboratorio: nutrition.numero_laboratorio ?? 0,
+    propio: nutrition.numero_propio ?? 0,
+  },
+  remitente: {
+    id: report.client_id ?? "",
+    orden: nutrition.orden ?? 0,
+    fechaRecepcion: nutrition.fecha_recepcion ?? "",
+    tipo: nutrition.tipo_muestra ?? "",
+    detalle: nutrition.detalle ?? "",
+  },
+  resultados: completarResultados(nutrition.resultados),
+  conclusiones: {
+    fechaInforme: nutrition.fecha_informe ?? "",
+  },
+});
 
 export function NutricionReportForm() {
   const navigate = useNavigate();

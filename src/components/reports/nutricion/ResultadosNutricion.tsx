@@ -1,12 +1,13 @@
-import { useFormContext, type FieldPath } from "react-hook-form";
+import {
+  useFieldArray,
+  useFormContext,
+  type FieldPath,
+} from "react-hook-form";
+import { Plus, Trash2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import type { NutricionReportFormData } from "@/lib/zodSchemas";
-import {
-  genericosTalCualSeca,
-  genericosUnValor,
-  talCualSecaCampos,
-  unValorCampos,
-} from "@/lib/nutricion";
+import { talCualSecaCampos, unValorCampos } from "@/lib/nutricion";
 
 type FieldName = FieldPath<NutricionReportFormData>;
 
@@ -67,6 +68,36 @@ function NombreInput({ name }: { name: FieldName }) {
   );
 }
 
+function EliminarButton({ onClick }: { onClick: () => void }) {
+  return (
+    <Button
+      type="button"
+      variant="ghost"
+      size="icon-sm"
+      title="Eliminar análisis"
+      className="text-destructive hover:bg-destructive/10 hover:text-destructive sm:mt-6"
+      onClick={onClick}
+    >
+      <Trash2 className="w-4 h-4" />
+    </Button>
+  );
+}
+
+function AgregarButton({ onClick }: { onClick: () => void }) {
+  return (
+    <Button
+      type="button"
+      variant="success"
+      size="sm"
+      className="flex items-center gap-2"
+      onClick={onClick}
+    >
+      <Plus className="w-4 h-4" />
+      Agregar análisis
+    </Button>
+  );
+}
+
 function SubTitulo({ children }: { children: React.ReactNode }) {
   return (
     <h3 className="text-lg font-semibold mt-6 mb-3 text-gray-800 dark:text-gray-200">
@@ -76,6 +107,13 @@ function SubTitulo({ children }: { children: React.ReactNode }) {
 }
 
 export function ResultadosNutricion() {
+  const { control } = useFormContext<NutricionReportFormData>();
+  const otrosSobreSustancia = useFieldArray({
+    control,
+    name: "resultados.otrosSobreSustancia",
+  });
+  const otros = useFieldArray({ control, name: "resultados.otros" });
+
   return (
     <section className="mb-6">
       <h2 className="text-2xl font-bold mb-4 text-gray-800 dark:text-gray-200">
@@ -114,23 +152,43 @@ export function ResultadosNutricion() {
       </div>
 
       <SubTitulo>Otros análisis sobre sustancia</SubTitulo>
-      {genericosTalCualSeca.map((g) => (
-        <div key={g} className={rowClassName}>
-          <NombreInput name={`resultados.${g}.name`} />
+      {otrosSobreSustancia.fields.map((field, index) => (
+        <div key={field.id} className={rowClassName}>
+          <NombreInput name={`resultados.otrosSobreSustancia.${index}.nombre`} />
           <div className="flex gap-4">
-            <NumeroInput name={`resultados.${g}.talCual`} label="Tal cual" />
-            <NumeroInput name={`resultados.${g}.seca`} label="Seca" />
+            <NumeroInput
+              name={`resultados.otrosSobreSustancia.${index}.talCual`}
+              label="Tal cual"
+            />
+            <NumeroInput
+              name={`resultados.otrosSobreSustancia.${index}.seca`}
+              label="Seca"
+            />
           </div>
+          <EliminarButton onClick={() => otrosSobreSustancia.remove(index)} />
         </div>
       ))}
+      <AgregarButton
+        onClick={() =>
+          otrosSobreSustancia.append({
+            nombre: "",
+            talCual: undefined,
+            seca: undefined,
+          })
+        }
+      />
 
       <SubTitulo>Otros análisis</SubTitulo>
-      {genericosUnValor.map((g) => (
-        <div key={g} className={rowClassName}>
-          <NombreInput name={`resultados.${g}.name`} />
-          <NumeroInput name={`resultados.${g}.number`} label="Resultado" />
+      {otros.fields.map((field, index) => (
+        <div key={field.id} className={rowClassName}>
+          <NombreInput name={`resultados.otros.${index}.nombre`} />
+          <NumeroInput name={`resultados.otros.${index}.valor`} label="Resultado" />
+          <EliminarButton onClick={() => otros.remove(index)} />
         </div>
       ))}
+      <AgregarButton
+        onClick={() => otros.append({ nombre: "", valor: undefined })}
+      />
     </section>
   );
 }

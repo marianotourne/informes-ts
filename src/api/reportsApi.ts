@@ -14,12 +14,6 @@ import type {
   FullFoodReport,
   FullNutritionReport,
 } from "../types/types";
-import {
-  genericosTalCualSeca,
-  genericosUnValor,
-  talCualSecaCampos,
-  unValorCampos,
-} from "../lib/nutricion";
 
 // Reports are saved in two steps (reports + the type-specific table) and Supabase
 // has no client-side transactions. If the second insert fails, this deletes the
@@ -312,10 +306,9 @@ export async function updateAlimentosReport(
 
 //ANIMAL NUTRITION
 // Maps the nutrition form to report_animal_nutrition columns (shared by create and update).
-// Empty results go to the DB as null.
+// resultados goes to the jsonb column as-is; empty values are left out of the JSON.
 function mapNutricionFormToRow(form: NutricionReportFormData) {
-  const r = form.resultados;
-  const row: Record<string, string | number | null> = {
+  return {
     // Number section
     numero_laboratorio: form.numero.laboratorio,
     numero_propio: form.numero.propio,
@@ -327,31 +320,11 @@ function mapNutricionFormToRow(form: NutricionReportFormData) {
     detalle: form.remitente.detalle,
 
     // Results section
-    actividad_ureasica_muestra: r.actividadUreasica.muestra ?? null,
-    actividad_ureasica_testigo: r.actividadUreasica.testigo ?? null,
+    resultados: form.resultados,
 
     // Conclusions
     fecha_informe: form.conclusiones.fechaInforme,
   };
-
-  for (const { name, column } of talCualSecaCampos) {
-    row[`${column}_tal_cual`] = r[name].talCual ?? null;
-    row[`${column}_seca`] = r[name].seca ?? null;
-  }
-  for (const { name, column } of unValorCampos) {
-    row[column] = r[name] ?? null;
-  }
-  for (const g of genericosUnValor) {
-    row[`${g}_name`] = r[g].name;
-    row[`${g}_number`] = r[g].number ?? null;
-  }
-  for (const g of genericosTalCualSeca) {
-    row[`${g}_name`] = r[g].name;
-    row[`${g}_tal_cual`] = r[g].talCual ?? null;
-    row[`${g}_seca`] = r[g].seca ?? null;
-  }
-
-  return row;
 }
 
 export async function createNutricionReport(form: NutricionReportFormData) {

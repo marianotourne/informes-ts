@@ -18,8 +18,7 @@ import LatoItalic from "@/assets/fonts/Lato-Italic.ttf";
 import LatoBoldItalic from "@/assets/fonts/Lato-BoldItalic.ttf";
 import type { Report, ReportAnimalNutrition } from "@/types/types";
 import {
-  genericosTalCualSeca,
-  genericosUnValor,
+  completarResultados,
   talCualSecaCampos,
   unValorCampos,
 } from "@/lib/nutricion";
@@ -63,6 +62,13 @@ const styles = StyleSheet.create({
   columnaTitulo: { fontWeight: "bold", padding: "2px 6px" },
   demasColumnas: { padding: "2px 6px" },
   resultadosColumnas: { padding: "2px 6px", justifyContent: "center" },
+  // TD gets all four borders from the table; `border: "none"` doesn't clear them
+  sinBorde: {
+    borderTopWidth: 0,
+    borderRightWidth: 0,
+    borderBottomWidth: 0,
+    borderLeftWidth: 0,
+  },
   texto: { margin: "10px auto 0", width: "80%", fontSize: 9 },
   textoIndicativo: { width: "400px", margin: "10px auto 0", fontSize: 7 },
   resultados: { width: "80%", margin: "14px auto" },
@@ -85,16 +91,11 @@ const formatDate = (value?: string | null) => {
   return parsed.format("DD/MM/YYYY");
 };
 
-// numeric columns can arrive as strings; a missing value or 0 is printed as "-"
-const toNumber = (value: unknown) =>
-  value === null || value === undefined || value === "" ? undefined : Number(value);
+const hasValue = (value?: number | null) => value !== null && value !== undefined;
 
-const hasValue = (value: unknown) => toNumber(value) !== undefined;
-
-const formatValor = (value: unknown) => {
-  const n = toNumber(value);
-  return n === undefined || n === 0 ? "-" : formatter.format(n);
-};
+// A missing value or 0 is printed as "-"
+const formatValor = (value?: number | null) =>
+  !value ? "-" : formatter.format(value);
 
 type PDFNutricionProps = {
   report: Report;
@@ -110,40 +111,40 @@ export const PDFNutricion = ({
 }: PDFNutricionProps) => {
   const fechaRecepcion = formatDate(nutrition.fecha_recepcion);
   const fechaInforme = formatDate(nutrition.fecha_informe);
+  const r = completarResultados(nutrition.resultados);
 
   // Rows with two values (fixed + free-form), shown when at least one is loaded
   const filasTalCualSeca = [
-    ...talCualSecaCampos.map(({ column, label }) => ({
-      key: column,
+    ...talCualSecaCampos.map(({ name, label }) => ({
+      key: name,
       title: label,
-      talCual: nutrition[`${column}_tal_cual`],
-      seca: nutrition[`${column}_seca`],
+      ...r[name],
     })),
-    ...genericosTalCualSeca.map((g) => ({
-      key: g,
-      title: nutrition[`${g}_name`] ?? "",
-      talCual: nutrition[`${g}_tal_cual`],
-      seca: nutrition[`${g}_seca`],
+    ...r.otrosSobreSustancia.map((otro, index) => ({
+      key: `otroSobreSustancia${index}`,
+      title: otro.nombre,
+      talCual: otro.talCual,
+      seca: otro.seca,
     })),
   ].filter((fila) => hasValue(fila.talCual) || hasValue(fila.seca));
 
   // Rows with a single value (fixed + free-form)
   const filasUnValor = [
-    ...unValorCampos.map(({ column, label }) => ({
-      key: column,
+    ...unValorCampos.map(({ name, label }) => ({
+      key: name,
       title: label,
-      valor: nutrition[column],
+      valor: r[name],
     })),
-    ...genericosUnValor.map((g) => ({
-      key: g,
-      title: nutrition[`${g}_name`] ?? "",
-      valor: nutrition[`${g}_number`],
+    ...r.otros.map((otro, index) => ({
+      key: `otro${index}`,
+      title: otro.nombre,
+      valor: otro.valor,
     })),
   ].filter((fila) => hasValue(fila.valor));
 
   const tieneActividadUreasica =
-    hasValue(nutrition.actividad_ureasica_muestra) ||
-    hasValue(nutrition.actividad_ureasica_testigo);
+    hasValue(r.actividadUreasica.muestra) ||
+    hasValue(r.actividadUreasica.testigo);
 
   return (
     <Document>
@@ -187,17 +188,19 @@ export const PDFNutricion = ({
               Resultados
             </Text>
             <Table style={styles.remitente} weightings={[0.8, 0.3, 0.3]}>
+              {/* Unboxed header row */}
               <TR>
-                <TD style={[styles.columnaTitulo, { border: "none" }]}></TD>
+                <TD style={[styles.columnaTitulo, styles.sinBorde]}></TD>
                 <TD
                   style={[
                     styles.demasColumnas,
-                    { border: "none", fontWeight: "bold" },
+                    styles.sinBorde,
+                    { fontWeight: "bold" },
                   ]}
                 >
                   Sobre sustancia
                 </TD>
-                <TD style={[styles.demasColumnas, { border: "none" }]}></TD>
+                <TD style={[styles.demasColumnas, styles.sinBorde]}></TD>
               </TR>
               <TR>
                 <TD style={styles.columnaTitulo}></TD>
@@ -223,7 +226,7 @@ export const PDFNutricion = ({
                   <TR key={fila.key}>
                     <TD style={styles.columnaTitulo}>{fila.title}</TD>
                     <TD style={styles.resultadosColumnas}>
-                      {formatter.format(toNumber(fila.valor) ?? 0)}
+                      {formatter.format(fila.valor ?? 0)}
                     </TD>
                   </TR>
                 ))}
@@ -255,10 +258,10 @@ export const PDFNutricion = ({
                     pH
                   </TD>
                   <TD style={styles.resultadosColumnas}>
-                    {formatValor(nutrition.actividad_ureasica_muestra)}
+                    {formatValor(r.actividadUreasica.muestra)}
                   </TD>
                   <TD style={styles.resultadosColumnas}>
-                    {formatValor(nutrition.actividad_ureasica_testigo)}
+                    {formatValor(r.actividadUreasica.testigo)}
                   </TD>
                 </TR>
               </Table>
