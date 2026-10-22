@@ -16,6 +16,7 @@ import LatoBold from "@/assets/fonts/Lato-Bold.ttf";
 import LatoItalic from "@/assets/fonts/Lato-Italic.ttf";
 import LatoBoldItalic from "@/assets/fonts/Lato-BoldItalic.ttf";
 import type { Report, ReportFood } from "@/types/types";
+import { completarResultados } from "@/lib/alimentos";
 
 Font.registerHyphenationCallback((word) => [word]);
 
@@ -58,12 +59,9 @@ const styles = StyleSheet.create({
   texto: { margin: "10px auto 0", width: "80%", fontSize: 9 },
   resultados: { width: "80%", margin: "14px auto" },
   resultadosBase: { position: "relative" },
-  resultadosExponente: {
-    position: "absolute",
-    top: "-2px",
-    right: "-4px",
-    fontSize: 6,
-  },
+  // Exponent laid out inline after the 10, raised like a superscript
+  potencia: { flexDirection: "row", alignItems: "flex-start" },
+  resultadosExponente: { fontSize: 6, marginTop: -2, marginLeft: -0.5 },
   pieFirma: { marginLeft: "350px", fontSize: 9 },
 });
 
@@ -83,11 +81,23 @@ const formatDate = (value?: string | null) => {
   return parsed.format("DD/MM/YYYY");
 };
 
-// humedad, ph and grados_brics are still text columns in the database
-const toNumber = (value?: number | string | null) =>
-  value === null || value === undefined || value === "" ? undefined : Number(value);
+const hasValue = (value?: number | null) =>
+  value !== null && value !== undefined;
 
-const hasValue = (value?: number | null) => value !== null && value !== undefined;
+// Count as "base x 10ⁿ": one space before the "x" and the exponent right
+// after the 10 (e.g. "1,5 x 10³", "<1 x 10²")
+const Potencia = ({
+  base,
+  exponente,
+}: {
+  base: string;
+  exponente?: number;
+}) => (
+  <View style={styles.potencia}>
+    <Text>{`${base} x 10`}</Text>
+    <Text style={styles.resultadosExponente}>{exponente}</Text>
+  </View>
+);
 
 type PDFAlimentosProps = {
   report: Report;
@@ -105,34 +115,33 @@ export const PDFAlimentos = ({
   const fechaInicio = formatDate(food.fecha_inicio);
   const fechaInforme = formatDate(food.fecha_informe);
 
-  const humedad = toNumber(food.humedad);
-  const ph = toNumber(food.ph);
-  const gradosBrics = toNumber(food.grados_brics);
+  const r = completarResultados(food.resultados);
+  const { humedad, ph, gradosbrics: gradosBrics } = r;
 
   const recuentos = [
     {
       id: 1,
       title: "Aerobias mesófilas (UFC/",
-      base: food.aerobias_base,
-      exponente: food.aerobias_exponente,
-      menor10: food.aerobias_menor10,
-      unidad: food.aerobias_unidad,
+      base: r.aerobias.base,
+      exponente: r.aerobias.exponente,
+      menor10: r.aerobias.menor10,
+      unidad: r.aerobias.unidad,
     },
     {
       id: 2,
       title: "Coliformes totales (UFC/",
-      base: food.coliformes_totales_base,
-      exponente: food.coliformes_totales_exponente,
-      menor10: food.coliformes_totales_menor10,
-      unidad: food.coliformes_totales_unidad,
+      base: r.coliformesTotales.base,
+      exponente: r.coliformesTotales.exponente,
+      menor10: r.coliformesTotales.menor10,
+      unidad: r.coliformesTotales.unidad,
     },
     {
       id: 3,
       title: "Coliformes termotolerantes (UFC/",
-      base: food.coliformes_termotolerantes_base,
-      exponente: food.coliformes_termotolerantes_exponente,
-      menor10: food.coliformes_termotolerantes_menor10,
-      unidad: food.coliformes_termotolerantes_unidad,
+      base: r.coliformesTermotolerantes.base,
+      exponente: r.coliformesTermotolerantes.exponente,
+      menor10: r.coliformesTermotolerantes.menor10,
+      unidad: r.coliformesTermotolerantes.unidad,
     },
   ];
 
@@ -188,25 +197,16 @@ export const PDFAlimentos = ({
                 recuento.menor10 || hasValue(recuento.base) ? (
                   <TR key={recuento.id}>
                     <TD style={styles.columnaTitulo}>
-                      {`${recuento.title} ${recuento.unidad ?? ""})`}
+                      {`${recuento.title}${recuento.unidad ?? ""})`}
                     </TD>
                     <TD style={styles.demasColumnas}>
                       {recuento.menor10 ? (
                         `<10`
                       ) : (
-                        <>
-                          <Text style={styles.resultadosBase}>
-                            {formatter.format(recuento.base ?? 0)}
-                          </Text>
-                          {!!recuento.exponente && (
-                            <View>
-                              <Text> x 10</Text>
-                              <Text style={styles.resultadosExponente}>
-                                {recuento.exponente}
-                              </Text>
-                            </View>
-                          )}
-                        </>
+                        <Potencia
+                          base={formatter.format(recuento.base ?? 0)}
+                          exponente={recuento.exponente}
+                        />
                       )}
                     </TD>
                   </TR>
@@ -214,158 +214,128 @@ export const PDFAlimentos = ({
               )}
 
               {/* ESTAFILOCOCO */}
-              {(food.estafilococo_menor10 ||
-                food.estafilococo_menor1 ||
-                hasValue(food.estafilococo_base)) && (
+              {(r.estafilococo.menor10 ||
+                r.estafilococo.menor1 ||
+                hasValue(r.estafilococo.base)) && (
                 <TR>
                   <TD style={styles.columnaTitulo}>
                     <Text style={{ fontStyle: "italic" }}>
                       Estafilococos aureus{" "}
                     </Text>
                     <Text>
-                      {`coag. positiva (UFC/${food.estafilococo_unidad ?? ""})`}
+                      {`coag. positiva (UFC/${r.estafilococo.unidad ?? ""})`}
                     </Text>
                   </TD>
                   <TD style={styles.demasColumnas}>
-                    {food.estafilococo_menor10 ? (
+                    {r.estafilococo.menor10 ? (
                       <View>
                         <Text style={styles.resultadosBase}>{`<10`}</Text>
                       </View>
-                    ) : food.estafilococo_menor1 ? (
-                      <View>
-                        <View>
-                          <Text style={styles.resultadosBase}>{`<1 x 10`}</Text>
-                          <Text style={styles.resultadosExponente}>{`2`}</Text>
-                        </View>
-                      </View>
+                    ) : r.estafilococo.menor1 ? (
+                      <Potencia base="<1" exponente={2} />
                     ) : (
-                      <View>
-                        <Text style={styles.resultadosBase}>
-                          {`${formatter.format(food.estafilococo_base ?? 0)} x 10`}
-                        </Text>
-                        <Text style={styles.resultadosExponente}>
-                          {food.estafilococo_exponente}
-                        </Text>
-                      </View>
+                      <Potencia
+                        base={formatter.format(r.estafilococo.base ?? 0)}
+                        exponente={r.estafilococo.exponente}
+                      />
                     )}
                   </TD>
                 </TR>
               )}
 
               {/* BACTERIAS ACIDOLÁCTICAS */}
-              {(food.bacterias_menor10 || hasValue(food.bacterias_base)) && (
+              {(r.bacterias.menor10 || hasValue(r.bacterias.base)) && (
                 <TR>
                   <TD style={styles.columnaTitulo}>
-                    {`Bacterias acido-lácticas (UFC/${food.bacterias_unidad ?? ""})`}
+                    {`Bacterias acido-lácticas (UFC/${r.bacterias.unidad ?? ""})`}
                   </TD>
                   <TD style={styles.demasColumnas}>
-                    {food.bacterias_menor10 ? (
+                    {r.bacterias.menor10 ? (
                       `<10`
                     ) : (
-                      <View>
-                        <Text style={styles.resultadosBase}>
-                          {`${formatter.format(food.bacterias_base ?? 0)} x 10`}
-                        </Text>
-                        <Text style={styles.resultadosExponente}>
-                          {food.bacterias_exponente}
-                        </Text>
-                      </View>
+                      <Potencia
+                        base={formatter.format(r.bacterias.base ?? 0)}
+                        exponente={r.bacterias.exponente}
+                      />
                     )}
                   </TD>
                 </TR>
               )}
 
               {/* SULFITO REDUCTORES */}
-              {(food.sulfito_menor10 || hasValue(food.sulfito_base)) && (
+              {(r.sulfito.menor10 || hasValue(r.sulfito.base)) && (
                 <TR>
                   <TD style={styles.columnaTitulo}>
-                    {`Sulfito reductores (UFC/${food.sulfito_unidad ?? ""})`}
+                    {`Sulfito reductores (UFC/${r.sulfito.unidad ?? ""})`}
                   </TD>
                   <TD style={styles.demasColumnas}>
-                    {food.sulfito_menor10 ? (
+                    {r.sulfito.menor10 ? (
                       `<10`
                     ) : (
-                      <View>
-                        <Text style={styles.resultadosBase}>
-                          {`${formatter.format(food.sulfito_base ?? 0)} x 10`}
-                        </Text>
-                        <Text style={styles.resultadosExponente}>
-                          {food.sulfito_exponente}
-                        </Text>
-                      </View>
+                      <Potencia
+                        base={formatter.format(r.sulfito.base ?? 0)}
+                        exponente={r.sulfito.exponente}
+                      />
                     )}
                   </TD>
                 </TR>
               )}
 
               {/* ESCHERICHIA COLI */}
-              {(food.escherichia_menor10 || hasValue(food.escherichia_base)) && (
+              {(r.escherichia.menor10 || hasValue(r.escherichia.base)) && (
                 <TR>
                   <TD style={styles.columnaTitulo}>
                     <Text style={{ fontStyle: "italic" }}>
                       Escherichia coli{" "}
                     </Text>
-                    <Text>{`(UFC/${food.escherichia_unidad ?? ""})`}</Text>
+                    <Text>{`(UFC/${r.escherichia.unidad ?? ""})`}</Text>
                   </TD>
                   <TD style={styles.demasColumnas}>
-                    {food.escherichia_menor10 ? (
+                    {r.escherichia.menor10 ? (
                       `<10`
                     ) : (
-                      <View>
-                        <Text style={styles.resultadosBase}>
-                          {`${formatter.format(food.escherichia_base ?? 0)} x 10`}
-                        </Text>
-                        <Text style={styles.resultadosExponente}>
-                          {food.escherichia_exponente}
-                        </Text>
-                      </View>
+                      <Potencia
+                        base={formatter.format(r.escherichia.base ?? 0)}
+                        exponente={r.escherichia.exponente}
+                      />
                     )}
                   </TD>
                 </TR>
               )}
 
               {/* MOHOS Y LEVADURAS */}
-              {(food.mohos_menor10 ||
-                food.mohos_menor1 ||
-                hasValue(food.mohos_base)) && (
+              {(r.mohos.menor10 ||
+                r.mohos.menor1 ||
+                hasValue(r.mohos.base)) && (
                 <TR>
                   <TD style={styles.columnaTitulo}>
-                    {`Mohos y levaduras (UFC/${food.mohos_unidad ?? ""})`}
+                    {`Mohos y levaduras (UFC/${r.mohos.unidad ?? ""})`}
                   </TD>
                   <TD style={styles.demasColumnas}>
-                    {food.mohos_menor10 ? (
+                    {r.mohos.menor10 ? (
                       <View>
                         <Text style={styles.resultadosBase}>{`<10`}</Text>
                       </View>
-                    ) : food.mohos_menor1 ? (
-                      <View>
-                        <View>
-                          <Text style={styles.resultadosBase}>{`<1 x 10`}</Text>
-                          <Text style={styles.resultadosExponente}>{`2`}</Text>
-                        </View>
-                      </View>
+                    ) : r.mohos.menor1 ? (
+                      <Potencia base="<1" exponente={2} />
                     ) : (
-                      <View>
-                        <Text style={styles.resultadosBase}>
-                          {`${formatter.format(food.mohos_base ?? 0)} x 10`}
-                        </Text>
-                        <Text style={styles.resultadosExponente}>
-                          {food.mohos_exponente}
-                        </Text>
-                      </View>
+                      <Potencia
+                        base={formatter.format(r.mohos.base ?? 0)}
+                        exponente={r.mohos.exponente}
+                      />
                     )}
                   </TD>
                 </TR>
               )}
 
               {/* SALMONELLA */}
-              {food.salmonella_presencia && (
+              {r.salmonella.presencia && (
                 <TR>
                   <TD style={[styles.columnaTitulo, { fontStyle: "italic" }]}>
                     Salmonella spp
                   </TD>
                   <TD style={styles.demasColumnas}>
-                    {`${food.salmonella_presencia}/${food.salmonella_base ?? ""} ${food.salmonella_unidad ?? ""}`}
+                    {`${r.salmonella.presencia}/${r.salmonella.base ?? ""} ${r.salmonella.unidad ?? ""}`}
                   </TD>
                 </TR>
               )}
@@ -398,20 +368,24 @@ export const PDFAlimentos = ({
                 </TR>
               )}
 
-              {/* Generic01 */}
-              {food.generic01_name && (
-                <TR>
-                  <TD style={styles.columnaTitulo}>{food.generic01_name}</TD>
+              {/* Otros análisis */}
+              {r.otros.map((otro, index) => (
+                <TR key={index}>
+                  <TD style={styles.columnaTitulo}>{otro.nombre}</TD>
                   <TD style={styles.demasColumnas}>
-                    {food.generic01_number ?? ""}
+                    {formatter.format(otro.valor ?? 0)}
                   </TD>
                 </TR>
-              )}
+              ))}
             </Table>
             {food.observaciones && (
               <View>
                 <Text
-                  style={{ marginLeft: "30px", fontStyle: "italic", fontSize: 9 }}
+                  style={{
+                    marginLeft: "30px",
+                    fontStyle: "italic",
+                    fontSize: 9,
+                  }}
                 >
                   {food.observaciones}
                 </Text>

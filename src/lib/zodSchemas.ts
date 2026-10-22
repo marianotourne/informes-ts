@@ -48,6 +48,16 @@ export const aguaReportSchema = z.object({
   }),
 });
 
+// Free-form analyses (name + single result), stored as a list inside the
+// `resultados` jsonb. Rows exist only once added, so they need a name and a result.
+const nombreAnalisis = z.string().trim().min(1, "Cargá el nombre del análisis");
+
+const otroAnalisisSchema = (valor: z.ZodOptional<z.ZodNumber>) =>
+  z.object({
+    nombre: nombreAnalisis,
+    valor: valor.refine((v) => v !== undefined, "Cargá el resultado"),
+  });
+
 // Microbial count: either base x 10^exponente, or "< 10" / "< 1x10²" (never both).
 // A count left completely empty means the analysis was not performed.
 const recuentoFields = {
@@ -126,10 +136,7 @@ export const alimentosReportSchema = z.object({
     humedad: z.number().min(0, "Mínimo 0").max(100, "Máximo 100").optional(),
     ph: z.number().min(2, "Mínimo 2").max(8, "Máximo 8").optional(),
     gradosbrics: z.number().min(0, "Mínimo 0").max(100, "Máximo 100").optional(),
-    generic01: z.object({
-      name: z.string(),
-      number: z.string(),
-    }),
+    otros: z.array(otroAnalisisSchema(z.number().optional())),
   }),
   conclusiones: z.object({
     fechaInforme: z.string().min(1, "La fecha de informe es requerida"),
@@ -145,14 +152,6 @@ const porcentaje = z.number().min(0, "Mínimo 0").max(100, "Máximo 100").option
 const talCualSecaSchema = z.object({
   talCual: porcentaje,
   seca: porcentaje,
-});
-
-// Free-form analyses: rows exist only once added, so they need a name and a result
-const nombreAnalisis = z.string().trim().min(1, "Cargá el nombre del análisis");
-
-const otroAnalisisSchema = z.object({
-  nombre: nombreAnalisis,
-  valor: porcentaje.refine((v) => v !== undefined, "Cargá el resultado"),
 });
 
 const otroSobreSustanciaSchema = z
@@ -195,7 +194,7 @@ export const nutricionReportSchema = z.object({
       testigo: porcentaje,
     }),
     otrosSobreSustancia: z.array(otroSobreSustanciaSchema),
-    otros: z.array(otroAnalisisSchema),
+    otros: z.array(otroAnalisisSchema(porcentaje)),
   }),
   conclusiones: z.object({
     fechaInforme: z.string().min(1, "La fecha de informe es requerida"),
@@ -204,6 +203,8 @@ export const nutricionReportSchema = z.object({
 
 export type AguaReportFormData = z.infer<typeof aguaReportSchema>;
 export type AlimentosReportFormData = z.infer<typeof alimentosReportSchema>;
+// Stored as-is in report_food.resultados (jsonb)
+export type AlimentosResultados = AlimentosReportFormData["resultados"];
 export type NutricionReportFormData = z.infer<typeof nutricionReportSchema>;
 // Stored as-is in report_animal_nutrition.resultados (jsonb)
 export type NutricionResultados = NutricionReportFormData["resultados"];

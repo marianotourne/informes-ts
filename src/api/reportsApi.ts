@@ -150,13 +150,9 @@ export async function updateAguaReport(
 }
 
 //FOOD
-// Empty radio selections ("") go to the DB as null: some columns have check constraints
-// that only accept specific values (e.g. salmonella_presencia)
-const emptyToNull = (value: string) => (value === "" ? null : value);
-
-// Maps the food form to report_food columns (shared by create and update)
+// Maps the food form to report_food columns (shared by create and update).
+// resultados goes to the jsonb column as-is; empty values are left out of the JSON.
 function mapAlimentosFormToRow(form: AlimentosReportFormData) {
-  const r = form.resultados;
   return {
     // Number section
     numero_laboratorio: form.numero.laboratorio,
@@ -170,60 +166,8 @@ function mapAlimentosFormToRow(form: AlimentosReportFormData) {
     marca_comercial: form.remitente.marcaComercial,
     matriz: form.remitente.matriz,
 
-    // Results section (count = base x 10^exponente)
-    aerobias_base: r.aerobias.base ?? null,
-    aerobias_exponente: r.aerobias.exponente ?? null,
-    aerobias_menor10: r.aerobias.menor10,
-    aerobias_unidad: emptyToNull(r.aerobias.unidad),
-
-    coliformes_totales_base: r.coliformesTotales.base ?? null,
-    coliformes_totales_exponente: r.coliformesTotales.exponente ?? null,
-    coliformes_totales_menor10: r.coliformesTotales.menor10,
-    coliformes_totales_unidad: emptyToNull(r.coliformesTotales.unidad),
-
-    coliformes_termotolerantes_base: r.coliformesTermotolerantes.base ?? null,
-    coliformes_termotolerantes_exponente: r.coliformesTermotolerantes.exponente ?? null,
-    coliformes_termotolerantes_menor10: r.coliformesTermotolerantes.menor10,
-    coliformes_termotolerantes_unidad: emptyToNull(r.coliformesTermotolerantes.unidad),
-
-    estafilococo_base: r.estafilococo.base ?? null,
-    estafilococo_exponente: r.estafilococo.exponente ?? null,
-    estafilococo_menor1: r.estafilococo.menor1,
-    estafilococo_menor10: r.estafilococo.menor10,
-    estafilococo_unidad: emptyToNull(r.estafilococo.unidad),
-
-    mohos_base: r.mohos.base ?? null,
-    mohos_exponente: r.mohos.exponente ?? null,
-    mohos_menor1: r.mohos.menor1,
-    mohos_menor10: r.mohos.menor10,
-    mohos_unidad: emptyToNull(r.mohos.unidad),
-
-    salmonella_base: r.salmonella.base ?? null,
-    salmonella_presencia: emptyToNull(r.salmonella.presencia),
-    salmonella_unidad: emptyToNull(r.salmonella.unidad),
-
-    bacterias_base: r.bacterias.base ?? null,
-    bacterias_exponente: r.bacterias.exponente ?? null,
-    bacterias_menor10: r.bacterias.menor10,
-    bacterias_unidad: emptyToNull(r.bacterias.unidad),
-
-    sulfito_base: r.sulfito.base ?? null,
-    sulfito_exponente: r.sulfito.exponente ?? null,
-    sulfito_menor10: r.sulfito.menor10,
-    sulfito_unidad: emptyToNull(r.sulfito.unidad),
-
-    escherichia_base: r.escherichia.base ?? null,
-    escherichia_exponente: r.escherichia.exponente ?? null,
-    escherichia_menor10: r.escherichia.menor10,
-    escherichia_unidad: emptyToNull(r.escherichia.unidad),
-
-    // Physicochemical
-    humedad: r.humedad ?? null,
-    ph: r.ph ?? null,
-    grados_brics: r.gradosbrics ?? null,
-
-    generic01_name: r.generic01.name,
-    generic01_number: r.generic01.number === "" ? null : Number(r.generic01.number),
+    // Results section
+    resultados: form.resultados,
 
     // Conclusions
     fecha_informe: form.conclusiones.fechaInforme,

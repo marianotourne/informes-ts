@@ -23,14 +23,7 @@ import { toast } from "@/components/ui//useToast";
 import type { FullFoodReport } from "@/types/types";
 import { Numeros } from "../common/Numeros";
 import { Remitente } from "../common/Remitente";
-
-const emptyRecuento = {
-  base: undefined,
-  exponente: undefined,
-  menor10: false,
-  unidad: "",
-};
-const emptyRecuentoMenor1 = { ...emptyRecuento, menor1: false };
+import { completarResultados, emptyResultados } from "@/lib/alimentos";
 
 const emptyValues: AlimentosReportFormData = {
   numero: {
@@ -46,30 +39,12 @@ const emptyValues: AlimentosReportFormData = {
     marcaComercial: "",
     matriz: "",
   },
-  resultados: {
-    aerobias: emptyRecuento,
-    coliformesTotales: emptyRecuento,
-    coliformesTermotolerantes: emptyRecuento,
-    estafilococo: emptyRecuentoMenor1,
-    bacterias: emptyRecuento,
-    sulfito: emptyRecuento,
-    escherichia: emptyRecuento,
-    mohos: emptyRecuentoMenor1,
-    salmonella: { base: undefined, presencia: "", unidad: "" },
-    humedad: undefined,
-    ph: undefined,
-    gradosbrics: undefined,
-    generic01: { name: "", number: "" },
-  },
+  resultados: emptyResultados(),
   conclusiones: {
     fechaInforme: "",
     observaciones: "",
   },
 };
-
-// humedad, ph and grados_brics are still text columns in the database
-const toOptionalNumber = (value: number | string | null | undefined) =>
-  value === null || value === undefined || value === "" ? undefined : Number(value);
 
 const mapReportToFormValues = ({
   report,
@@ -88,70 +63,7 @@ const mapReportToFormValues = ({
     marcaComercial: food.marca_comercial ?? "",
     matriz: food.matriz ?? "",
   },
-  resultados: {
-    aerobias: {
-      base: food.aerobias_base ?? undefined,
-      exponente: food.aerobias_exponente ?? undefined,
-      menor10: food.aerobias_menor10 ?? false,
-      unidad: food.aerobias_unidad ?? "",
-    },
-    coliformesTotales: {
-      base: food.coliformes_totales_base ?? undefined,
-      exponente: food.coliformes_totales_exponente ?? undefined,
-      menor10: food.coliformes_totales_menor10 ?? false,
-      unidad: food.coliformes_totales_unidad ?? "",
-    },
-    coliformesTermotolerantes: {
-      base: food.coliformes_termotolerantes_base ?? undefined,
-      exponente: food.coliformes_termotolerantes_exponente ?? undefined,
-      menor10: food.coliformes_termotolerantes_menor10 ?? false,
-      unidad: food.coliformes_termotolerantes_unidad ?? "",
-    },
-    estafilococo: {
-      base: food.estafilococo_base ?? undefined,
-      exponente: food.estafilococo_exponente ?? undefined,
-      menor1: food.estafilococo_menor1 ?? false,
-      menor10: food.estafilococo_menor10 ?? false,
-      unidad: food.estafilococo_unidad ?? "",
-    },
-    bacterias: {
-      base: food.bacterias_base ?? undefined,
-      exponente: food.bacterias_exponente ?? undefined,
-      menor10: food.bacterias_menor10 ?? false,
-      unidad: food.bacterias_unidad ?? "",
-    },
-    sulfito: {
-      base: food.sulfito_base ?? undefined,
-      exponente: food.sulfito_exponente ?? undefined,
-      menor10: food.sulfito_menor10 ?? false,
-      unidad: food.sulfito_unidad ?? "",
-    },
-    escherichia: {
-      base: food.escherichia_base ?? undefined,
-      exponente: food.escherichia_exponente ?? undefined,
-      menor10: food.escherichia_menor10 ?? false,
-      unidad: food.escherichia_unidad ?? "",
-    },
-    mohos: {
-      base: food.mohos_base ?? undefined,
-      exponente: food.mohos_exponente ?? undefined,
-      menor1: food.mohos_menor1 ?? false,
-      menor10: food.mohos_menor10 ?? false,
-      unidad: food.mohos_unidad ?? "",
-    },
-    salmonella: {
-      base: food.salmonella_base ?? undefined,
-      presencia: food.salmonella_presencia ?? "",
-      unidad: food.salmonella_unidad ?? "",
-    },
-    humedad: toOptionalNumber(food.humedad),
-    ph: toOptionalNumber(food.ph),
-    gradosbrics: toOptionalNumber(food.grados_brics),
-    generic01: {
-      name: food.generic01_name ?? "",
-      number: food.generic01_number?.toString() ?? "",
-    },
-  },
+  resultados: completarResultados(food.resultados),
   conclusiones: {
     fechaInforme: food.fecha_informe ?? "",
     observaciones: food.observaciones ?? "",
