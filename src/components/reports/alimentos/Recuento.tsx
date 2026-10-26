@@ -1,4 +1,5 @@
-import { useFormContext } from "react-hook-form";
+import type { ReactNode } from "react";
+import { get, useFormContext, type FieldError } from "react-hook-form";
 import { X } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { FormRadioGroup } from "@/components/reports/common/FormRadioGroup";
@@ -12,7 +13,9 @@ type RecuentoName =
   | "bacterias"
   | "sulfito"
   | "escherichia"
-  | "mohos";
+  | "mohos"
+  // A row of the free-form counts list
+  | `otrosRecuentos.${number}`;
 
 // Counts that also offer the "< 1x10²" option
 type RecuentoMenor1Name = "estafilococo" | "mohos";
@@ -26,9 +29,13 @@ const unidades = [
 const toNumber = (v: unknown) =>
   v === "" || v === null || v === undefined ? undefined : Number(v);
 
+type RecuentoErrors = Partial<
+  Record<"base" | "exponente" | "menor10" | "unidad", FieldError>
+>;
+
 type RecuentoProps =
-  | { title: string; name: Exclude<RecuentoName, RecuentoMenor1Name> }
-  | { title: string; name: RecuentoMenor1Name; conMenor1: true };
+  | { title: ReactNode; name: Exclude<RecuentoName, RecuentoMenor1Name> }
+  | { title: ReactNode; name: RecuentoMenor1Name; conMenor1: true };
 
 export function Recuento(props: RecuentoProps) {
   const { title, name } = props;
@@ -44,7 +51,10 @@ export function Recuento(props: RecuentoProps) {
   const menor10 = watch(`resultados.${name}.menor10`);
   const menor1 = "conMenor1" in props && watch(`resultados.${props.name}.menor1`);
   const esMenor = menor10 || menor1;
-  const fieldErrors = errors.resultados?.[name];
+  const fieldErrors: RecuentoErrors | undefined = get(
+    errors,
+    `resultados.${name}`,
+  );
 
   // Set every field first and validate the group once at the end, so an
   // intermediate state (e.g. base cleared, exponente still set) never leaves
@@ -91,9 +101,9 @@ export function Recuento(props: RecuentoProps) {
 
   return (
     <div className="flex flex-col mb-3 border-b border-solid border-gray-400 pb-2">
-      <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+      <div className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
         {title}
-      </p>
+      </div>
       <div className="flex flex-wrap items-center gap-4">
         <div className="flex items-center gap-2">
           <Input

@@ -22,6 +22,7 @@ export const emptyResultados = (): AlimentosResultados => ({
   ph: undefined,
   gradosbrics: undefined,
   otros: [],
+  otrosRecuentos: [],
 });
 
 // The jsonb column can miss keys (empty values aren't serialized, and reports

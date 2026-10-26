@@ -22,6 +22,10 @@ export function ResultadosAlimentos() {
     formState: { errors },
   } = useFormContext<AlimentosReportFormData>();
   const otros = useFieldArray({ control, name: "resultados.otros" });
+  const otrosRecuentos = useFieldArray({
+    control,
+    name: "resultados.otrosRecuentos",
+  });
 
   return (
     <section className="mb-6">
@@ -120,6 +124,72 @@ export function ResultadosAlimentos() {
             >
               <Plus className="w-4 h-4" />
               Agregar análisis
+            </Button>
+          </div>
+        </div>
+
+        {/* Free-form extra counts: name + count, like the fixed ones */}
+        <div className="flex flex-col mb-3 border-b border-solid border-gray-400 pb-2">
+          <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            Otros recuentos
+          </p>
+          <div className="space-y-3">
+            {otrosRecuentos.fields.map((field, index) => {
+              const nombreError =
+                errors.resultados?.otrosRecuentos?.[index]?.nombre;
+              return (
+                <Recuento
+                  key={field.id}
+                  name={`otrosRecuentos.${index}`}
+                  title={
+                    <>
+                      <div className="flex items-center gap-4">
+                        <Input
+                          placeholder="Nombre"
+                          {...register(
+                            `resultados.otrosRecuentos.${index}.nombre`,
+                          )}
+                          aria-invalid={nombreError ? "true" : "false"}
+                          className="w-full sm:w-80"
+                        />
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon-sm"
+                          title="Eliminar recuento"
+                          className="text-destructive hover:bg-destructive/10 hover:text-destructive"
+                          onClick={() => otrosRecuentos.remove(index)}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
+                      {nombreError && (
+                        <p className="mt-1 font-normal text-red-600 dark:text-red-400">
+                          {nombreError.message}
+                        </p>
+                      )}
+                    </>
+                  }
+                />
+              );
+            })}
+            <Button
+              type="button"
+              variant="success"
+              size="sm"
+              className="flex items-center gap-2"
+              onClick={() =>
+                otrosRecuentos.append({
+                  nombre: "",
+                  base: undefined,
+                  exponente: undefined,
+                  menor10: false,
+                  unidad: "",
+                })
+              }
+            >
+              <Plus className="w-4 h-4" />
+              Agregar recuento
             </Button>
           </div>
         </div>

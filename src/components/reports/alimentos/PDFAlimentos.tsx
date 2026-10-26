@@ -377,6 +377,25 @@ export const PDFAlimentos = ({
                   </TD>
                 </TR>
               ))}
+
+              {/* Otros recuentos (provisionally the last rows) */}
+              {r.otrosRecuentos.map((recuento, index) => (
+                <TR key={`recuento-${index}`}>
+                  <TD style={styles.columnaTitulo}>
+                    {`${recuento.nombre} (UFC/${recuento.unidad})`}
+                  </TD>
+                  <TD style={styles.demasColumnas}>
+                    {recuento.menor10 ? (
+                      `<10`
+                    ) : (
+                      <Potencia
+                        base={formatter.format(recuento.base ?? 0)}
+                        exponente={recuento.exponente}
+                      />
+                    )}
+                  </TD>
+                </TR>
+              ))}
             </Table>
             {food.observaciones && (
               <View>

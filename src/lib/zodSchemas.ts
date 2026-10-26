@@ -99,6 +99,17 @@ const recuentoMenor1Schema = z
   .object({ ...recuentoFields, menor1: z.boolean() })
   .superRefine(validarRecuento);
 
+// Free-form count added by the user (name + count). Unlike the fixed counts it
+// only exists once added, so it needs a result.
+const otroRecuentoSchema = z
+  .object({ nombre: nombreAnalisis, ...recuentoFields })
+  .superRefine((r, ctx) => {
+    if (!r.menor10 && r.base === undefined && r.exponente === undefined) {
+      ctx.addIssue({ code: "custom", path: ["base"], message: "Cargá el resultado" });
+    }
+    validarRecuento(r, ctx);
+  });
+
 export const alimentosReportSchema = z.object({
   numero: z.object({
     laboratorio: z.number().int("Debe ser un número entero").min(1, "Debe ser un número positivo"),
@@ -137,6 +148,7 @@ export const alimentosReportSchema = z.object({
     ph: z.number().min(2, "Mínimo 2").max(8, "Máximo 8").optional(),
     gradosbrics: z.number().min(0, "Mínimo 0").max(100, "Máximo 100").optional(),
     otros: z.array(otroAnalisisSchema(z.number().optional())),
+    otrosRecuentos: z.array(otroRecuentoSchema),
   }),
   conclusiones: z.object({
     fechaInforme: z.string().min(1, "La fecha de informe es requerida"),
