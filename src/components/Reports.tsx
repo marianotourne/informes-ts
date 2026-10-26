@@ -17,6 +17,7 @@ import { useClients } from "@/hooks/useClients";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { formatDate } from "@/hooks/useDate";
 import { usePagination } from "@/hooks/usePagination";
+import { useProfile } from "@/hooks/useProfile";
 
 import { Eye, Pencil, FileDown, Trash2, Loader2 } from "lucide-react";
 import { pdf } from "@react-pdf/renderer";
@@ -184,6 +185,7 @@ export function Reports() {
   );
 
   const { clientsQuery } = useClients();
+  const { isInterno } = useProfile();
 
   const reportsQuery = useQuery<FullReport[]>({
     queryKey: ["reports"],
@@ -314,38 +316,40 @@ export function Reports() {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h1 className="text-4xl font-bold text-blue-600">Informes</h1>
-        <div
-          className="relative"
-          ref={menuRef}
-          onMouseEnter={() => setIsMenuOpen(true)}
-          onMouseLeave={() => setIsMenuOpen(false)}
-        >
-          <Button variant="success" className="flex items-center gap-2">
-            {/* <Plus className="w-5 h-5" /> */}
-            Nuevo Informe
-            <ChevronDown className="w-4 h-4" />
-          </Button>
+        {isInterno && (
+          <div
+            className="relative"
+            ref={menuRef}
+            onMouseEnter={() => setIsMenuOpen(true)}
+            onMouseLeave={() => setIsMenuOpen(false)}
+          >
+            <Button variant="success" className="flex items-center gap-2">
+              {/* <Plus className="w-5 h-5" /> */}
+              Nuevo Informe
+              <ChevronDown className="w-4 h-4" />
+            </Button>
 
-          {isMenuOpen && (
-            <>
-              {/* Puente invisible para mantener el menú abierto al mover el mouse */}
-              <div className="absolute right-0 top-full w-56 h-2 z-10" />
-              <div className="absolute right-0 top-full mt-2 w-56 bg-white dark:bg-gray-800 rounded-md shadow-lg border border-gray-200 dark:border-gray-700 z-10">
-                <div className="py-1">
-                  {reportTypes.map((type) => (
-                    <button
-                      key={type.value}
-                      onClick={() => handleSelectType(type.value)}
-                      className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-                    >
-                      {type.label}
-                    </button>
-                  ))}
+            {isMenuOpen && (
+              <>
+                {/* Puente invisible para mantener el menú abierto al mover el mouse */}
+                <div className="absolute right-0 top-full w-56 h-2 z-10" />
+                <div className="absolute right-0 top-full mt-2 w-56 bg-white dark:bg-gray-800 rounded-md shadow-lg border border-gray-200 dark:border-gray-700 z-10">
+                  <div className="py-1">
+                    {reportTypes.map((type) => (
+                      <button
+                        key={type.value}
+                        onClick={() => handleSelectType(type.value)}
+                        className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                      >
+                        {type.label}
+                      </button>
+                    ))}
+                  </div>
                 </div>
-              </div>
-            </>
-          )}
-        </div>
+              </>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Formulario de búsqueda */}
@@ -599,16 +603,18 @@ export function Reports() {
                           <Eye className="w-4 h-4" />
                         </Button>
 
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon-sm"
-                          title="Editar"
-                          className="text-muted-foreground"
-                          onClick={() => handleEditReport(item)}
-                        >
-                          <Pencil className="w-4 h-4" />
-                        </Button>
+                        {isInterno && (
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon-sm"
+                            title="Editar"
+                            className="text-muted-foreground"
+                            onClick={() => handleEditReport(item)}
+                          >
+                            <Pencil className="w-4 h-4" />
+                          </Button>
+                        )}
 
                         <Button
                           type="button"
@@ -626,28 +632,30 @@ export function Reports() {
                           )}
                         </Button>
 
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon-sm"
-                          title="Eliminar"
-                          className="text-destructive hover:bg-destructive/10 hover:text-destructive"
-                          onClick={() => {
-                            setReportToDelete(item);
-                            setConfirmOpen(true);
-                          }}
-                          disabled={
-                            deleteMutation.isPending &&
-                            deleteMutation.variables === item.report.id
-                          }
-                        >
-                          {deleteMutation.isPending &&
-                          deleteMutation.variables === item.report.id ? (
-                            <Loader2 className="w-4 h-4 animate-spin" />
-                          ) : (
-                            <Trash2 className="w-4 h-4" />
-                          )}
-                        </Button>
+                        {isInterno && (
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon-sm"
+                            title="Eliminar"
+                            className="text-destructive hover:bg-destructive/10 hover:text-destructive"
+                            onClick={() => {
+                              setReportToDelete(item);
+                              setConfirmOpen(true);
+                            }}
+                            disabled={
+                              deleteMutation.isPending &&
+                              deleteMutation.variables === item.report.id
+                            }
+                          >
+                            {deleteMutation.isPending &&
+                            deleteMutation.variables === item.report.id ? (
+                              <Loader2 className="w-4 h-4 animate-spin" />
+                            ) : (
+                              <Trash2 className="w-4 h-4" />
+                            )}
+                          </Button>
+                        )}
                       </div>
                     </td>
                   </tr>

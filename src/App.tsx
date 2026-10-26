@@ -33,7 +33,7 @@ function App() {
         <Route
           path="/clients"
           element={
-            <ProtectedRoute>
+            <ProtectedRoute soloInternos>
               <Layout>
                 <Clients />
               </Layout>
@@ -44,7 +44,7 @@ function App() {
         <Route
           path="/reports/agua/new"
           element={
-            <ProtectedRoute>
+            <ProtectedRoute soloInternos>
               <AguaReportForm />
             </ProtectedRoute>
           }
@@ -52,7 +52,7 @@ function App() {
         <Route
           path="/reports/agua/:id/edit"
           element={
-            <ProtectedRoute>
+            <ProtectedRoute soloInternos>
               <AguaReportForm />
             </ProtectedRoute>
           }
@@ -69,7 +69,7 @@ function App() {
         <Route
           path="/reports/alimentos/new"
           element={
-            <ProtectedRoute>
+            <ProtectedRoute soloInternos>
               <AlimentosReportForm />
             </ProtectedRoute>
           }
@@ -77,7 +77,7 @@ function App() {
         <Route
           path="/reports/alimentos/:id/edit"
           element={
-            <ProtectedRoute>
+            <ProtectedRoute soloInternos>
               <AlimentosReportForm />
             </ProtectedRoute>
           }
@@ -94,7 +94,7 @@ function App() {
         <Route
           path="/reports/nutricion/new"
           element={
-            <ProtectedRoute>
+            <ProtectedRoute soloInternos>
               <NutricionReportForm />
             </ProtectedRoute>
           }
@@ -102,7 +102,7 @@ function App() {
         <Route
           path="/reports/nutricion/:id/edit"
           element={
-            <ProtectedRoute>
+            <ProtectedRoute soloInternos>
               <NutricionReportForm />
             </ProtectedRoute>
           }

@@ -9,6 +9,12 @@ export interface Client {
 }
 
 
+export interface Profile {
+  id: string; // UUID, same as auth.users.id
+  nombre: string;
+  rol: "interno" | "externo";
+}
+
 export type ReportType = "agua" | "alimentos" | "nutricion";
 
 export interface Report {
@@ -22,6 +28,7 @@ export interface Report {
     observations?: string;
     pdf_url?: string;
     created_at: string;
+    created_by?: string | null; // profiles.id of the user who registered it
   }
   
   export interface ReportWater {

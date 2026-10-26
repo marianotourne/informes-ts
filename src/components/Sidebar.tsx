@@ -8,21 +8,73 @@ import {
 import { Button } from "./ui/button";
 import { cn } from "@/lib/utils";
 import { useNavigate, useLocation } from "react-router-dom";
+import { useEffect, useState } from "react";
 
 interface SidebarProps {
   onSignOut: () => void;
+  userName?: string;
+  isInterno: boolean;
   isOpen: boolean;
   onToggle: () => void;
 }
 
-export function Sidebar({ onSignOut, isOpen, onToggle }: SidebarProps) {
+const DIAS = [
+  "Domingo",
+  "Lunes",
+  "Martes",
+  "Miércoles",
+  "Jueves",
+  "Viernes",
+  "Sábado",
+];
+
+// Ej: "Lunes 20/10/2026 - 14.01hs"
+function formatFechaHora(d: Date) {
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${DIAS[d.getDay()]} ${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()} - ${pad(d.getHours())}.${pad(d.getMinutes())}hs`;
+}
+
+// Componente aparte para que el tick del reloj no re-renderice todo el sidebar
+function Reloj() {
+  const [now, setNow] = useState(() => new Date());
+
+  useEffect(() => {
+    let interval: ReturnType<typeof setInterval>;
+    // Sincronizar con el inicio del próximo minuto y después actualizar cada minuto
+    const timeout = setTimeout(
+      () => {
+        setNow(new Date());
+        interval = setInterval(() => setNow(new Date()), 60_000);
+      },
+      60_000 - (Date.now() % 60_000),
+    );
+    return () => {
+      clearTimeout(timeout);
+      clearInterval(interval);
+    };
+  }, []);
+
+  return (
+    <p className="text-xs text-gray-400 whitespace-nowrap">
+      {formatFechaHora(now)}
+    </p>
+  );
+}
+
+export function Sidebar({
+  onSignOut,
+  userName,
+  isInterno,
+  isOpen,
+  onToggle,
+}: SidebarProps) {
   const navigate = useNavigate();
   const location = useLocation();
 
   const menuItems = [
-    { path: "/", label: "Informes", icon: FileText },
-    { path: "/clients", label: "Clientes", icon: Users },
-  ];
+    { path: "/", label: "Informes", icon: FileText, soloInternos: false },
+    { path: "/clients", label: "Clientes", icon: Users, soloInternos: true },
+  ].filter((item) => isInterno || !item.soloInternos);
 
   return (
     <div
@@ -86,6 +138,19 @@ export function Sidebar({ onSignOut, isOpen, onToggle }: SidebarProps) {
       </nav>
 
       <div className={cn("p-4 border-t border-gray-800", !isOpen && "px-2")}>
+        {isOpen && (
+          <div className="px-4 pb-3 space-y-1">
+            {userName && (
+              <p
+                className="text-sm font-medium text-white truncate"
+                title={userName}
+              >
+                {userName}
+              </p>
+            )}
+            <Reloj />
+          </div>
+        )}
         <Button
           variant="ghost"
           onClick={onSignOut}
