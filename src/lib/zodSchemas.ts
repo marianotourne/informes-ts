@@ -16,11 +16,29 @@ export const clientSchema = z.object({
 export type ClientFormData = z.infer<typeof clientSchema>;
 
 export const loginSchema = z.object({
-  email: z.string().email("Email inválido"),
-  password: z.string().min(6, "La contraseña debe tener al menos 6 caracteres"),
+  email: z.string().email("Ingresá un email válido"),
+  password: z.string().min(6, "La contraseña tiene que tener al menos 6 caracteres"),
 });
 
 export type LoginFormData = z.infer<typeof loginSchema>;
+
+export const forgotPasswordSchema = z.object({
+  email: z.string().email("Ingresá un email válido"),
+});
+
+export type ForgotPasswordFormData = z.infer<typeof forgotPasswordSchema>;
+
+export const resetPasswordSchema = z
+  .object({
+    password: z.string().min(6, "La contraseña tiene que tener al menos 6 caracteres"),
+    confirmacion: z.string(),
+  })
+  .refine((data) => data.password === data.confirmacion, {
+    message: "Las contraseñas no coinciden",
+    path: ["confirmacion"],
+  });
+
+export type ResetPasswordFormData = z.infer<typeof resetPasswordSchema>;
 
 export const aguaReportSchema = z.object({
   numero: z.object({

@@ -5,7 +5,8 @@ import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { useAuth } from "@/hooks/useAuth";
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { traducirErrorAuth } from "@/lib/authErrors";
 
 export function Login() {
   const { signIn } = useAuth();
@@ -29,12 +30,12 @@ export function Login() {
       const { error } = await signIn(data.email, data.password);
 
       if (error) {
-        setError(error.message);
+        setError(traducirErrorAuth(error));
       } else {
         navigate("/");
       }
-    } catch (err) {
-      setError("Error al iniciar sesión. Intenta nuevamente.");
+    } catch {
+      setError("Error al iniciar sesión. Intentá nuevamente.");
     } finally {
       setLoading(false);
     }
@@ -48,7 +49,7 @@ export function Login() {
             Iniciar Sesión
           </h2>
           <p className="mt-2 text-center text-sm text-gray-600 dark:text-gray-400">
-            Ingresa tus credenciales para acceder
+            Ingresá tus credenciales para acceder
           </p>
         </div>
 
@@ -100,6 +101,14 @@ export function Login() {
                   {errors.password.message}
                 </p>
               )}
+              <div className="mt-2 text-right">
+                <Link
+                  to="/forgot-password"
+                  className="text-sm text-primary hover:underline"
+                >
+                  ¿Olvidaste tu contraseña?
+                </Link>
+              </div>
             </div>
           </div>
 
