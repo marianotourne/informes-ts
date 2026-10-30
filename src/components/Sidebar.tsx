@@ -18,6 +18,10 @@ interface SidebarProps {
   onToggle: () => void;
 }
 
+// Los textos aparecen con un fade al final de la transición de ancho (300ms) para no verse antes de que el sidebar termine de abrirse
+const APARECER =
+  "animate-in fade-in-0 duration-150 delay-250 fill-mode-backwards";
+
 const DIAS = [
   "Domingo",
   "Lunes",
@@ -79,18 +83,23 @@ export function Sidebar({
   return (
     <div
       className={cn(
-        "bg-gray-900 dark:bg-gray-950 text-white min-h-screen flex flex-col transition-all duration-300 ease-in-out shrink-0",
+        "bg-gray-900 dark:bg-gray-950 text-white min-h-screen flex flex-col overflow-hidden transition-all duration-300 ease-in-out shrink-0",
         isOpen ? "w-64" : "w-16",
       )}
     >
       <div
         className={cn(
-          "p-4 border-b border-gray-800 flex items-center",
-          isOpen ? "justify-between px-6" : "justify-center",
+          "p-4 border-b border-gray-800 flex items-center gap-2",
+          isOpen ? "justify-between" : "justify-center",
         )}
       >
         {isOpen && (
-          <h2 className="text-xl font-bold text-white whitespace-nowrap overflow-hidden">
+          <h2
+            className={cn(
+              "min-w-0 text-lg font-bold text-white whitespace-nowrap overflow-hidden",
+              APARECER,
+            )}
+          >
             Sistema de Informes
           </h2>
         )}
@@ -128,7 +137,12 @@ export function Sidebar({
             >
               <Icon className="w-5 h-5 shrink-0" />
               {isOpen && (
-                <span className="font-medium whitespace-nowrap overflow-hidden">
+                <span
+                  className={cn(
+                    "font-medium whitespace-nowrap overflow-hidden",
+                    APARECER,
+                  )}
+                >
                   {item.label}
                 </span>
               )}
@@ -139,7 +153,7 @@ export function Sidebar({
 
       <div className={cn("p-4 border-t border-gray-800", !isOpen && "px-2")}>
         {isOpen && (
-          <div className="px-4 pb-3 space-y-1">
+          <div className={cn("px-4 pb-3 space-y-1", APARECER)}>
             {userName && (
               <p
                 className="text-sm font-medium text-white truncate"
@@ -161,7 +175,11 @@ export function Sidebar({
           )}
         >
           <LogOut className={cn("w-5 h-5 shrink-0", isOpen && "mr-3")} />
-          {isOpen && <span className="whitespace-nowrap">Cerrar Sesión</span>}
+          {isOpen && (
+            <span className={cn("whitespace-nowrap", APARECER)}>
+              Cerrar Sesión
+            </span>
+          )}
         </Button>
       </div>
     </div>

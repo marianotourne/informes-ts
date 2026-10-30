@@ -24,6 +24,7 @@ import { pdf } from "@react-pdf/renderer";
 import { ConfirmDialog } from "./ConfirmDialog";
 import { TablePagination } from "./TablePagination";
 import { DatePicker } from "./DatePicker";
+import { TruncatedText } from "./TruncatedText";
 import { toast } from "./ui/useToast";
 import { PDFAgua } from "./reports/agua/PDFAgua";
 import { PDFAlimentos } from "./reports/alimentos/PDFAlimentos";
@@ -455,48 +456,48 @@ export function Reports() {
 
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+          <table className="w-full divide-y divide-gray-200 dark:divide-gray-700">
             <thead className="bg-gray-50 dark:bg-gray-900">
               <tr>
                 <th
                   scope="col"
-                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider"
+                  className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider"
                 >
                   Cliente
                 </th>
                 <th
                   scope="col"
-                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider"
+                  className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider"
                 >
                   Número
                 </th>
                 <th
                   scope="col"
-                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider"
+                  className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider"
                 >
                   Detalle
                 </th>
                 <th
                   scope="col"
-                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider"
+                  className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider"
                 >
                   Tipo
                 </th>
                 <th
                   scope="col"
-                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider"
+                  className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider"
                 >
                   Fecha
                 </th>
                 <th
                   scope="col"
-                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider"
+                  className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider"
                 >
                   Resultado
                 </th>
                 <th
                   scope="col"
-                  className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider"
+                  className="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider"
                 >
                   Acciones
                 </th>
@@ -550,12 +551,14 @@ export function Reports() {
                 pageItems.map((item) => (
                   <tr key={item.report.id}>
                     {/* Cliente */}
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
-                      {getClientName(item.report.client_id)}
+                    <td className="px-4 py-4 w-1/2 max-w-0 text-sm text-gray-900 dark:text-gray-100">
+                      <TruncatedText
+                        text={getClientName(item.report.client_id)}
+                      />
                     </td>
 
                     {/* Número */}
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
+                    <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
                       {item.report.report_number ||
                         getDetail(item).numero_propio ||
                         getDetail(item).numero_laboratorio ||
@@ -563,22 +566,24 @@ export function Reports() {
                     </td>
 
                     {/* Detalle */}
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
-                      {getDetail(item).detalle || "—"}
+                    <td className="px-4 py-4 w-1/2 max-w-0 text-sm text-gray-900 dark:text-gray-100">
+                      <TruncatedText
+                        text={getDetail(item).detalle || "—"}
+                      />
                     </td>
 
                     {/* Tipo */}
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
+                    <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
                       {getReportTypeLabel(item.type)}
                     </td>
 
                     {/* Fecha */}
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
+                    <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
                       {formatDate(getReportDate(item))}
                     </td>
 
                     {/* Resultado */}
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
+                    <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
                       {item.type === "agua"
                         ? (() => {
                             const { text, classname } = getEstiloPorResultado(
@@ -590,7 +595,7 @@ export function Reports() {
                     </td>
 
                     {/* Acciones */}
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm">
+                    <td className="px-4 py-4 whitespace-nowrap text-right text-sm">
                       <div className="flex items-center justify-end gap-1">
                         <Button
                           type="button"
