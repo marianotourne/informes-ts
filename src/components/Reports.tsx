@@ -1,5 +1,12 @@
 import { useState, useRef, useMemo, useCallback } from "react";
-import { ChevronDown, Search, SlidersHorizontal } from "lucide-react";
+import {
+  ArrowDown,
+  ArrowUp,
+  ArrowUpDown,
+  ChevronDown,
+  Search,
+  SlidersHorizontal,
+} from "lucide-react";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import {
@@ -122,6 +129,103 @@ const getReportDate = (item: FullReport): string => {
   return raw.slice(0, 10);
 };
 
+const getReportNumber = (item: FullReport) =>
+  item.report.report_number ||
+  getDetail(item).numero_propio ||
+  getDetail(item).numero_laboratorio ||
+  "—";
+
+type SortColumn = "cliente" | "numero" | "detalle" | "tipo" | "fecha";
+type SortDirection = "asc" | "desc";
+type SortState = { column: SortColumn; direction: SortDirection };
+
+const defaultSort: SortState = { column: "fecha", direction: "desc" };
+
+// numeric para que "9" quede antes que "10"
+const compareText = (a: string, b: string) =>
+  a.localeCompare(b, "es", { numeric: true, sensitivity: "base" });
+
+// Orden por defecto: fecha descendente, luego tipo (alfabético) y número ascendentes
+const compareDefault = (a: FullReport, b: FullReport): number =>
+  getReportDate(b).localeCompare(getReportDate(a)) ||
+  compareText(getReportTypeLabel(a.type), getReportTypeLabel(b.type)) ||
+  compareText(String(getReportNumber(a)), String(getReportNumber(b)));
+
+// Ordena por la columna elegida y desempata con el orden por defecto
+const sortReports = (
+  reports: FullReport[],
+  sort: SortState,
+  getClientName: (clientId: string) => string,
+): FullReport[] => {
+  const getValue = (item: FullReport): string => {
+    switch (sort.column) {
+      case "cliente":
+        return getClientName(item.report.client_id);
+      case "numero":
+        return String(getReportNumber(item));
+      case "detalle":
+        return getDetail(item).detalle || "";
+      case "tipo":
+        return getReportTypeLabel(item.type);
+      case "fecha":
+        return getReportDate(item);
+    }
+  };
+  const sign = sort.direction === "asc" ? 1 : -1;
+  return [...reports].sort(
+    (a, b) =>
+      sign * compareText(getValue(a), getValue(b)) || compareDefault(a, b),
+  );
+};
+
+const headerClassName =
+  "px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider";
+
+function SortableHeader({
+  label,
+  column,
+  sort,
+  onSort,
+}: {
+  label: string;
+  column: SortColumn;
+  sort: SortState;
+  onSort: (column: SortColumn) => void;
+}) {
+  const isActive = sort.column === column;
+  const Icon = !isActive
+    ? ArrowUpDown
+    : sort.direction === "asc"
+      ? ArrowUp
+      : ArrowDown;
+
+  return (
+    <th
+      scope="col"
+      className={headerClassName}
+      aria-sort={
+        isActive
+          ? sort.direction === "asc"
+            ? "ascending"
+            : "descending"
+          : "none"
+      }
+    >
+      <button
+        type="button"
+        onClick={() => onSort(column)}
+        className={cn(
+          "inline-flex items-center gap-1 uppercase tracking-wider hover:text-gray-900 dark:hover:text-gray-100",
+          isActive && "text-gray-900 dark:text-gray-100",
+        )}
+      >
+        {label}
+        <Icon className={cn("size-3.5", !isActive && "opacity-40")} />
+      </button>
+    </th>
+  );
+}
+
 const filterReports = (
   reports: FullReport[],
   filters: SearchFilters,
@@ -241,13 +345,27 @@ export function Reports() {
     setPage(1);
   };
 
+  const [sort, setSort] = useState<SortState>(defaultSort);
+
   const filteredReports = useMemo(() => {
     if (!reportsQuery.data) return [];
-    if (!appliedFilters) return reportsQuery.data;
-    return filterReports(reportsQuery.data, appliedFilters, getClientName);
-  }, [reportsQuery.data, appliedFilters, getClientName]);
+    const reports = appliedFilters
+      ? filterReports(reportsQuery.data, appliedFilters, getClientName)
+      : reportsQuery.data;
+    return sortReports(reports, sort, getClientName);
+  }, [reportsQuery.data, appliedFilters, sort, getClientName]);
 
   const { pageItems, setPage, ...pagination } = usePagination(filteredReports);
+
+  // Clic en la misma columna invierte el sentido; en otra, fecha arranca descendente y el resto ascendente
+  const handleSort = (column: SortColumn) => {
+    setSort((prev) =>
+      prev.column === column
+        ? { column, direction: prev.direction === "asc" ? "desc" : "asc" }
+        : { column, direction: column === "fecha" ? "desc" : "asc" },
+    );
+    setPage(1);
+  };
 
   const queryClient = useQueryClient();
 
@@ -295,12 +413,6 @@ export function Reports() {
     item.type === "agua" ? (
       <ResultadoBadge resultado={item.water.resultado} />
     ) : null;
-
-  const getReportNumber = (item: FullReport) =>
-    item.report.report_number ||
-    getDetail(item).numero_propio ||
-    getDetail(item).numero_laboratorio ||
-    "—";
 
   // Cargando / error / sin resultados; null cuando hay informes para mostrar
   const renderStatus = () => {
@@ -626,40 +738,37 @@ export function Reports() {
           <table className="w-full divide-y divide-gray-200 dark:divide-gray-700">
             <thead className="bg-gray-50 dark:bg-gray-900">
               <tr>
-                <th
-                  scope="col"
-                  className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider"
-                >
-                  Cliente
-                </th>
-                <th
-                  scope="col"
-                  className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider"
-                >
-                  Número
-                </th>
-                <th
-                  scope="col"
-                  className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider"
-                >
-                  Detalle
-                </th>
-                <th
-                  scope="col"
-                  className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider"
-                >
-                  Tipo
-                </th>
-                <th
-                  scope="col"
-                  className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider"
-                >
-                  Fecha
-                </th>
-                <th
-                  scope="col"
-                  className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider"
-                >
+                <SortableHeader
+                  label="Cliente"
+                  column="cliente"
+                  sort={sort}
+                  onSort={handleSort}
+                />
+                <SortableHeader
+                  label="Número"
+                  column="numero"
+                  sort={sort}
+                  onSort={handleSort}
+                />
+                <SortableHeader
+                  label="Detalle"
+                  column="detalle"
+                  sort={sort}
+                  onSort={handleSort}
+                />
+                <SortableHeader
+                  label="Tipo"
+                  column="tipo"
+                  sort={sort}
+                  onSort={handleSort}
+                />
+                <SortableHeader
+                  label="Fecha"
+                  column="fecha"
+                  sort={sort}
+                  onSort={handleSort}
+                />
+                <th scope="col" className={headerClassName}>
                   Resultado
                 </th>
                 <th
