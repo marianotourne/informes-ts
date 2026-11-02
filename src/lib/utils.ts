@@ -5,6 +5,14 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
+// Sanitiza caracteres inválidos en nombres de archivo (Windows/Mac/Linux) y
+// quita puntos/espacios finales: "GEMBA S.A." daría "GEMBA S.A..pdf", que
+// Windows no acepta y Chrome en Android rechaza al compartir
+function toPdfFilename(raw: string): string {
+  const safe = raw.replace(/[/\\:*?"<>|]/g, "").replace(/[.\s]+$/, "");
+  return `${safe}.pdf`;
+}
+
 export function buildAguaReportFilename(
   numeroPropio: number | null | undefined,
   clientName: string,
@@ -14,10 +22,7 @@ export function buildAguaReportFilename(
 
   const raw = `ANÁLISIS AGUA ${numero} - ${nombre}`;
 
-  // Sanitiza caracteres inválidos en nombres de archivo (Windows/Mac/Linux)
-  const safe = raw.replace(/[/\\:*?"<>|]/g, "");
-
-  return `${safe}.pdf`;
+  return toPdfFilename(raw);
 }
 export function buildAlimentosReportFilename(
   numeroPropio: number | null | undefined,
@@ -28,10 +33,7 @@ export function buildAlimentosReportFilename(
 
   const raw = `ANÁLISIS ALIMENTOS ${numero} - ${nombre}`;
 
-  // Sanitiza caracteres inválidos en nombres de archivo (Windows/Mac/Linux)
-  const safe = raw.replace(/[/\\:*?"<>|]/g, "");
-
-  return `${safe}.pdf`;
+  return toPdfFilename(raw);
 }
 export function buildNutricionReportFilename(
   numeroPropio: number | null | undefined,
@@ -42,10 +44,7 @@ export function buildNutricionReportFilename(
 
   const raw = `ANÁLISIS NUTRICIÓN ANIMAL ${numero} - ${nombre}`;
 
-  // Sanitiza caracteres inválidos en nombres de archivo (Windows/Mac/Linux)
-  const safe = raw.replace(/[/\\:*?"<>|]/g, "");
-
-  return `${safe}.pdf`;
+  return toPdfFilename(raw);
 }
 
 // Quita el "15" de un celular argentino en formato local (código de área de 2 a 4 dígitos + 15 + número).
