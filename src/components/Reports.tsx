@@ -1,5 +1,5 @@
 import { useState, useRef, useMemo, useCallback } from "react";
-import { ChevronDown, Search } from "lucide-react";
+import { ChevronDown, Search, SlidersHorizontal } from "lucide-react";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import {
@@ -10,7 +10,7 @@ import {
   SelectValue,
 } from "./ui/select";
 import { useNavigate } from "react-router-dom";
-// import { cn } from "@/lib/utils";
+import { cn } from "@/lib/utils";
 import type { FullReport, ReportType } from "@/types/types";
 import { deleteReport, fetchAllReports } from "@/api/reportsApi";
 import { useClients } from "@/hooks/useClients";
@@ -264,6 +264,8 @@ export function Reports() {
   const handleSearch = () => {
     setAppliedFilters({ ...searchFilters });
     setPage(1);
+    // En el celular, plegar los filtros para que se vea la lista
+    setShowFilters(false);
   };
 
   const handleClearSearch = () => {
@@ -313,10 +315,138 @@ export function Reports() {
     navigate(`/reports/${item.type}/${item.report.id}/view`);
   };
 
+  // Cantidad de filtros aplicados, para el botón "Filtros" del celular
+  const activeFilterCount = appliedFilters
+    ? Object.values(appliedFilters).filter(Boolean).length
+    : 0;
+  const [showFilters, setShowFilters] = useState(false);
+
+  // Un externo con un solo cliente no tiene nada que buscar por nombre
+  const showClientFilter = isInterno || (clientsQuery.data?.length ?? 0) > 1;
+
+  const renderResultado = (item: FullReport) => {
+    if (item.type !== "agua") return null;
+    const { text, classname } = getEstiloPorResultado(
+      item.water.resultado ?? "",
+    );
+    return <span className={classname}>{text}</span>;
+  };
+
+  const getReportNumber = (item: FullReport) =>
+    item.report.report_number ||
+    getDetail(item).numero_propio ||
+    getDetail(item).numero_laboratorio ||
+    "—";
+
+  // Cargando / error / sin resultados; null cuando hay informes para mostrar
+  const renderStatus = () => {
+    if (reportsQuery.isLoading) return "Cargando informes...";
+    if (reportsQuery.isError)
+      return (
+        <span className="text-red-600 dark:text-red-400">
+          Error al cargar informes
+        </span>
+      );
+    if (filteredReports.length > 0) return null;
+    return appliedFilters ? (
+      <>
+        <p className="text-sm">No se encontraron informes con esos filtros</p>
+        <p className="text-xs mt-1">
+          Probá ajustar los criterios o hacé clic en "Limpiar"
+        </p>
+      </>
+    ) : (
+      <>
+        <p className="text-sm">No hay informes generados aún</p>
+        {isInterno && (
+          <p className="text-xs mt-1">
+            Haz clic en "Nuevo Informe" para crear uno
+          </p>
+        )}
+      </>
+    );
+  };
+  const status = renderStatus();
+
+  // En la tabla van con size "icon-sm"; en las tarjetas del celular, más grandes para tocar
+  const renderActions = (
+    item: FullReport,
+    size: "icon-sm" | "icon" = "icon-sm",
+  ) => (
+    <div className="flex items-center justify-end gap-1">
+      <Button
+        type="button"
+        variant="ghost"
+        size={size}
+        title="Ver"
+        className="text-primary hover:bg-primary/10 hover:text-primary"
+        onClick={() => handleViewReport(item)}
+      >
+        <Eye className="w-4 h-4" />
+      </Button>
+
+      {isInterno && (
+        <Button
+          type="button"
+          variant="ghost"
+          size={size}
+          title="Editar"
+          className="text-muted-foreground"
+          onClick={() => handleEditReport(item)}
+        >
+          <Pencil className="w-4 h-4" />
+        </Button>
+      )}
+
+      <Button
+        type="button"
+        variant="ghost"
+        size={size}
+        title="Descargar PDF"
+        className="text-success hover:bg-success/10 hover:text-success"
+        onClick={() => handleDownloadPdf(item)}
+        disabled={generatingPdfId === item.report.id}
+      >
+        {generatingPdfId === item.report.id ? (
+          <Loader2 className="w-4 h-4 animate-spin" />
+        ) : (
+          <FileDown className="w-4 h-4" />
+        )}
+      </Button>
+
+      {isInterno && (
+        <Button
+          type="button"
+          variant="ghost"
+          size={size}
+          title="Eliminar"
+          className="text-destructive hover:bg-destructive/10 hover:text-destructive"
+          onClick={() => {
+            setReportToDelete(item);
+            setConfirmOpen(true);
+          }}
+          disabled={
+            deleteMutation.isPending &&
+            deleteMutation.variables === item.report.id
+          }
+        >
+          {deleteMutation.isPending &&
+          deleteMutation.variables === item.report.id ? (
+            <Loader2 className="w-4 h-4 animate-spin" />
+          ) : (
+            <Trash2 className="w-4 h-4" />
+          )}
+        </Button>
+      )}
+    </div>
+  );
+
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-4xl font-bold text-blue-600">Informes</h1>
+    <div className="space-y-4 md:space-y-6">
+      <div className="flex justify-between items-center gap-4">
+        <h1 className="text-2xl md:text-4xl font-bold text-blue-600">
+          Informes
+        </h1>
         {isInterno && (
           <div
             className="relative"
@@ -353,10 +483,43 @@ export function Reports() {
         )}
       </div>
 
+      {/* Celular: los filtros quedan plegados detrás de este botón */}
+      <Button
+        type="button"
+        variant="outline"
+        className="md:hidden w-full"
+        onClick={() => setShowFilters((prev) => !prev)}
+        aria-expanded={showFilters}
+      >
+        <SlidersHorizontal className="w-4 h-4" />
+        Filtros
+        {activeFilterCount > 0 && (
+          <span className="inline-flex items-center justify-center rounded-full bg-primary text-primary-foreground text-xs min-w-5 h-5 px-1.5">
+            {activeFilterCount}
+          </span>
+        )}
+        <ChevronDown
+          className={cn(
+            "w-4 h-4 ml-auto transition-transform",
+            showFilters && "rotate-180",
+          )}
+        />
+      </Button>
+
       {/* Formulario de búsqueda */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-          <div className="md:col-span-1">
+      <div
+        className={cn(
+          "bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-4 md:p-6 md:block",
+          !showFilters && "hidden",
+        )}
+      >
+        <div
+          className={cn(
+            "grid grid-cols-1 gap-4",
+            showClientFilter ? "md:grid-cols-5" : "md:grid-cols-4",
+          )}
+        >
+          <div className={cn("md:col-span-1", !showClientFilter && "hidden")}>
             <label
               htmlFor="client"
               className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
@@ -455,7 +618,47 @@ export function Reports() {
       </div>
 
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
-        <div className="overflow-x-auto">
+        {/* Celular: una tarjeta por informe; tocarla abre el informe */}
+        <div className="md:hidden divide-y divide-gray-200 dark:divide-gray-700">
+          {status ? (
+            <div className="px-4 py-12 text-center text-gray-500 dark:text-gray-400">
+              {status}
+            </div>
+          ) : (
+            pageItems.map((item) => (
+              <div key={item.report.id} className="px-4 py-3">
+                <button
+                  type="button"
+                  onClick={() => handleViewReport(item)}
+                  className="w-full text-left space-y-1"
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <p className="font-medium text-gray-900 dark:text-gray-100 break-words min-w-0">
+                      {getClientName(item.report.client_id)}
+                    </p>
+                    <div className="shrink-0 text-xs">
+                      {renderResultado(item)}
+                    </div>
+                  </div>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">
+                    {getReportTypeLabel(item.type)} ·{" "}
+                    {formatDate(getReportDate(item))} · N°{" "}
+                    {getReportNumber(item)}
+                  </p>
+                  {getDetail(item).detalle && (
+                    <p className="text-sm text-gray-700 dark:text-gray-300 line-clamp-2">
+                      {getDetail(item).detalle}
+                    </p>
+                  )}
+                </button>
+                <div className="mt-1 -mr-2">{renderActions(item, "icon")}</div>
+              </div>
+            ))
+          )}
+        </div>
+
+        {/* Escritorio: tabla */}
+        <div className="hidden md:block overflow-x-auto">
           <table className="w-full divide-y divide-gray-200 dark:divide-gray-700">
             <thead className="bg-gray-50 dark:bg-gray-900">
               <tr>
@@ -504,47 +707,13 @@ export function Reports() {
               </tr>
             </thead>
             <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-              {reportsQuery.isLoading ? (
+              {status ? (
                 <tr>
                   <td
                     colSpan={7}
                     className="px-6 py-12 text-center text-gray-500 dark:text-gray-400"
                   >
-                    Cargando informes...
-                  </td>
-                </tr>
-              ) : reportsQuery.isError ? (
-                <tr>
-                  <td
-                    colSpan={7}
-                    className="px-6 py-12 text-center text-red-600 dark:text-red-400"
-                  >
-                    Error al cargar informes
-                  </td>
-                </tr>
-              ) : filteredReports.length === 0 ? (
-                <tr>
-                  <td
-                    colSpan={7}
-                    className="px-6 py-12 text-center text-gray-500 dark:text-gray-400"
-                  >
-                    {appliedFilters ? (
-                      <>
-                        <p className="text-sm">
-                          No se encontraron informes con esos filtros
-                        </p>
-                        <p className="text-xs mt-1">
-                          Probá ajustar los criterios o hacé clic en "Limpiar"
-                        </p>
-                      </>
-                    ) : (
-                      <>
-                        <p className="text-sm">No hay informes generados aún</p>
-                        <p className="text-xs mt-1">
-                          Haz clic en "Nuevo Informe" para crear uno
-                        </p>
-                      </>
-                    )}
+                    {status}
                   </td>
                 </tr>
               ) : (
@@ -559,17 +728,12 @@ export function Reports() {
 
                     {/* Número */}
                     <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
-                      {item.report.report_number ||
-                        getDetail(item).numero_propio ||
-                        getDetail(item).numero_laboratorio ||
-                        "—"}
+                      {getReportNumber(item)}
                     </td>
 
                     {/* Detalle */}
                     <td className="px-4 py-4 w-1/2 max-w-0 text-sm text-gray-900 dark:text-gray-100">
-                      <TruncatedText
-                        text={getDetail(item).detalle || "—"}
-                      />
+                      <TruncatedText text={getDetail(item).detalle || "—"} />
                     </td>
 
                     {/* Tipo */}
@@ -584,84 +748,12 @@ export function Reports() {
 
                     {/* Resultado */}
                     <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
-                      {item.type === "agua"
-                        ? (() => {
-                            const { text, classname } = getEstiloPorResultado(
-                              item.water.resultado ?? "",
-                            );
-                            return <span className={classname}>{text}</span>;
-                          })()
-                        : ""}
+                      {renderResultado(item)}
                     </td>
 
                     {/* Acciones */}
                     <td className="px-4 py-4 whitespace-nowrap text-right text-sm">
-                      <div className="flex items-center justify-end gap-1">
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon-sm"
-                          title="Ver"
-                          className="text-primary hover:bg-primary/10 hover:text-primary"
-                          onClick={() => handleViewReport(item)}
-                        >
-                          <Eye className="w-4 h-4" />
-                        </Button>
-
-                        {isInterno && (
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="icon-sm"
-                            title="Editar"
-                            className="text-muted-foreground"
-                            onClick={() => handleEditReport(item)}
-                          >
-                            <Pencil className="w-4 h-4" />
-                          </Button>
-                        )}
-
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon-sm"
-                          title="Descargar PDF"
-                          className="text-success hover:bg-success/10 hover:text-success"
-                          onClick={() => handleDownloadPdf(item)}
-                          disabled={generatingPdfId === item.report.id}
-                        >
-                          {generatingPdfId === item.report.id ? (
-                            <Loader2 className="w-4 h-4 animate-spin" />
-                          ) : (
-                            <FileDown className="w-4 h-4" />
-                          )}
-                        </Button>
-
-                        {isInterno && (
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="icon-sm"
-                            title="Eliminar"
-                            className="text-destructive hover:bg-destructive/10 hover:text-destructive"
-                            onClick={() => {
-                              setReportToDelete(item);
-                              setConfirmOpen(true);
-                            }}
-                            disabled={
-                              deleteMutation.isPending &&
-                              deleteMutation.variables === item.report.id
-                            }
-                          >
-                            {deleteMutation.isPending &&
-                            deleteMutation.variables === item.report.id ? (
-                              <Loader2 className="w-4 h-4 animate-spin" />
-                            ) : (
-                              <Trash2 className="w-4 h-4" />
-                            )}
-                          </Button>
-                        )}
-                      </div>
+                      {renderActions(item)}
                     </td>
                   </tr>
                 ))

@@ -78,7 +78,9 @@ export function Clients() {
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h1 className="text-4xl font-bold text-blue-600">Clientes</h1>
+        <h1 className="text-2xl md:text-4xl font-bold text-blue-600">
+          Clientes
+        </h1>
         <Button
           variant="success"
           onClick={handleNewClient}

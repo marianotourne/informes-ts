@@ -16,6 +16,9 @@ interface SidebarProps {
   isInterno: boolean;
   isOpen: boolean;
   onToggle: () => void;
+  // Se llama después de navegar (el menú del celular lo usa para cerrarse)
+  onNavigate?: () => void;
+  className?: string;
 }
 
 // Los textos aparecen con un fade al final de la transición de ancho (300ms) para no verse antes de que el sidebar termine de abrirse
@@ -71,6 +74,8 @@ export function Sidebar({
   isInterno,
   isOpen,
   onToggle,
+  onNavigate,
+  className,
 }: SidebarProps) {
   const navigate = useNavigate();
   const location = useLocation();
@@ -83,8 +88,9 @@ export function Sidebar({
   return (
     <div
       className={cn(
-        "bg-gray-900 dark:bg-gray-950 text-white min-h-screen flex flex-col overflow-hidden transition-all duration-300 ease-in-out shrink-0",
+        "bg-gray-900 dark:bg-gray-950 text-white h-full flex flex-col overflow-hidden transition-all duration-300 ease-in-out shrink-0",
         isOpen ? "w-64" : "w-16",
+        className,
       )}
     >
       <div
@@ -125,7 +131,10 @@ export function Sidebar({
           return (
             <button
               key={item.path}
-              onClick={() => navigate(item.path)}
+              onClick={() => {
+                navigate(item.path);
+                onNavigate?.();
+              }}
               title={!isOpen ? item.label : undefined}
               className={cn(
                 "w-full flex items-center gap-3 py-3 rounded-lg transition-colors",

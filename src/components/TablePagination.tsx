@@ -55,7 +55,7 @@ export function TablePagination({
   const isLast = page === totalPages;
 
   return (
-    <div className="flex flex-col sm:flex-row items-center justify-between gap-3 px-6 py-4 border-t border-gray-200 dark:border-gray-700">
+    <div className="flex flex-col sm:flex-row items-center justify-between gap-3 px-4 sm:px-6 py-4 border-t border-gray-200 dark:border-gray-700">
       <p className="text-sm text-gray-500 dark:text-gray-400 whitespace-nowrap">
         Mostrando {from}–{to} de {totalItems}
       </p>
