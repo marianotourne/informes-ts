@@ -33,42 +33,15 @@ import {
   buildAguaReportFilename,
   buildAlimentosReportFilename,
   buildNutricionReportFilename,
+  downloadBlob,
 } from "@/lib/utils";
+import { ResultadoBadge } from "./reports/agua/ResultadoBadge";
 
 const reportTypes: Array<{ value: ReportType; label: string }> = [
   { value: "agua", label: "Agua" },
   { value: "alimentos", label: "Alimentos" },
   { value: "nutricion", label: "Nutrición Animal" },
 ];
-
-const getEstiloPorResultado = (resultado: string) => {
-  switch (resultado) {
-    case "Potable":
-      return {
-        text: resultado,
-        classname:
-          "inline-flex items-center rounded-full bg-green-50 px-2 py-1 font-medium text-green-700 ring-1 ring-inset ring-green-600/20",
-      };
-    case "Deficiente":
-      return {
-        text: resultado,
-        classname:
-          "inline-flex items-center rounded-full bg-yellow-50 px-2 py-1 font-medium text-yellow-800 ring-1 ring-inset ring-yellow-600/20",
-      };
-    case "No potable":
-      return {
-        text: resultado,
-        classname:
-          "inline-flex items-center rounded-full bg-red-50 px-2 py-1 font-medium text-red-700 ring-1 ring-inset ring-red-600/10",
-      };
-    default:
-      return {
-        text: "Nulo",
-        classname:
-          "inline-flex items-center rounded-full bg-blue-50 px-2 py-1 font-medium text-blue-700 ring-1 ring-inset ring-blue-600/20",
-      };
-  }
-};
 
 type SearchFilters = {
   client: string;
@@ -217,13 +190,7 @@ export function Reports() {
       const clientName = getClientName(item.report.client_id);
       const { document: pdfDocument, filename } = getPdf(item, clientName);
       const blob = await pdf(pdfDocument).toBlob();
-
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = filename;
-      link.click();
-      URL.revokeObjectURL(url);
+      downloadBlob(blob, filename);
     } catch (error) {
       console.error("Error al generar el PDF:", error);
       toast({
@@ -324,13 +291,10 @@ export function Reports() {
   // Un externo con un solo cliente no tiene nada que buscar por nombre
   const showClientFilter = isInterno || (clientsQuery.data?.length ?? 0) > 1;
 
-  const renderResultado = (item: FullReport) => {
-    if (item.type !== "agua") return null;
-    const { text, classname } = getEstiloPorResultado(
-      item.water.resultado ?? "",
-    );
-    return <span className={classname}>{text}</span>;
-  };
+  const renderResultado = (item: FullReport) =>
+    item.type === "agua" ? (
+      <ResultadoBadge resultado={item.water.resultado} />
+    ) : null;
 
   const getReportNumber = (item: FullReport) =>
     item.report.report_number ||

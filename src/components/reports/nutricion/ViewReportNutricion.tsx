@@ -1,17 +1,14 @@
-import { useEffect, useState } from "react";
-import { ArrowLeft } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { useNavigate, useParams } from "react-router-dom";
-import { PDFViewer, PDFDownloadLink } from "@react-pdf/renderer";
-import { Layout } from "@/components/Layout";
+import { useEffect, useMemo, useState } from "react";
+import { useParams } from "react-router-dom";
 import { fetchNutritionReportById } from "@/api/reportsApi";
 import { useClients } from "@/hooks/useClients";
+import { ReportView } from "../common/ReportView";
 import { PDFNutricion } from "./PDFNutricion";
+import { ResumenNutricion } from "./ResumenNutricion";
 import type { FullNutritionReport } from "@/types/types";
 import { buildNutricionReportFilename } from "@/lib/utils";
 
 export function ViewReportNutricion() {
-  const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
   const [item, setItem] = useState<FullNutritionReport | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -48,71 +45,41 @@ export function ViewReportNutricion() {
     };
   }, [id]);
 
-  const handleBack = () => navigate("/");
-
   const clientName =
     clientsQuery.data?.find((c) => c.id === item?.report.client_id)?.name ??
     "—";
 
+  // Memoized: ReportView regenerates the mobile PDF whenever the document changes
+  const pdfDocument = useMemo(
+    () =>
+      item && (
+        <PDFNutricion
+          report={item.report}
+          nutrition={item.nutrition}
+          clientName={clientName}
+        />
+      ),
+    [item, clientName],
+  );
+
   return (
-    <Layout>
-      <div className="space-y-6">
-        <div className="flex items-center justify-between gap-4">
-          <div className="flex items-center gap-4">
-            <Button
-              variant="ghost"
-              onClick={handleBack}
-              className="flex items-center gap-2"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              Volver
-            </Button>
-            <h1 className="text-4xl font-bold text-blue-600">Informe - Nutrición Animal</h1>
-          </div>
-
-          {item && (
-            <PDFDownloadLink
-              document={
-                <PDFNutricion
-                  report={item.report}
-                  nutrition={item.nutrition}
-                  clientName={clientName}
-                />
-              }
-              fileName={buildNutricionReportFilename(
-                item.nutrition.numero_propio,
-                clientName,
-              )}
-            >
-              {({ loading }) => (
-                <Button disabled={loading}>
-                  {loading ? "Generando..." : "Descargar PDF"}
-                </Button>
-              )}
-            </PDFDownloadLink>
-          )}
-        </div>
-
-        {isLoading ? (
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 text-center text-gray-500 dark:text-gray-400">
-            Cargando informe...
-          </div>
-        ) : loadError ? (
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 text-center text-red-600 dark:text-red-400">
-            {loadError}
-          </div>
-        ) : (
-          item && (
-            <PDFViewer style={{ width: "100%", height: "85vh" }}>
-              <PDFNutricion
-                report={item.report}
-                nutrition={item.nutrition}
-                clientName={clientName}
-              />
-            </PDFViewer>
-          )
-        )}
-      </div>
-    </Layout>
+    <ReportView
+      title="Informe - Nutrición Animal"
+      isLoading={isLoading}
+      loadError={loadError}
+      pdfDocument={pdfDocument}
+      filename={buildNutricionReportFilename(
+        item?.nutrition.numero_propio,
+        clientName,
+      )}
+      resumen={
+        item && (
+          <ResumenNutricion
+            nutrition={item.nutrition}
+            clientName={clientName}
+          />
+        )
+      }
+    />
   );
 }

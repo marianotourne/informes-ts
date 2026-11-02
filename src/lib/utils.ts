@@ -85,3 +85,13 @@ export function buildWhatsAppUrl(phone: string): string | null {
 
   return `https://wa.me/${digits}`;
 }
+
+// Descarga un archivo generado en el navegador (ej. el blob de un PDF)
+export function downloadBlob(blob: Blob, filename: string) {
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = filename;
+  link.click();
+  URL.revokeObjectURL(url);
+}
