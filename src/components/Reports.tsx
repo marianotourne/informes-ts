@@ -424,6 +424,17 @@ export function Reports() {
         </span>
       );
     if (filteredReports.length > 0) return null;
+    // Externo recién registrado: hasta que el laboratorio le asigne clientes no ve nada
+    if (!isInterno && clientsQuery.isSuccess && clientsQuery.data.length === 0)
+      return (
+        <>
+          <p className="text-sm">Tu cuenta todavía no tiene clientes asignados</p>
+          <p className="text-xs mt-1">
+            Comunicate con el laboratorio para que te habiliten el acceso a tus
+            informes
+          </p>
+        </>
+      );
     return appliedFilters ? (
       <>
         <p className="text-sm">No se encontraron informes con esos filtros</p>

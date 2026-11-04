@@ -115,6 +115,13 @@ export function Login() {
           <Button type="submit" className="w-full" disabled={loading}>
             {loading ? "Iniciando sesión..." : "Iniciar Sesión"}
           </Button>
+
+          <p className="text-center text-sm text-gray-600 dark:text-gray-400">
+            ¿No tenés cuenta?{" "}
+            <Link to="/signup" className="text-primary hover:underline">
+              Crear una cuenta
+            </Link>
+          </p>
         </form>
       </div>
     </div>

@@ -40,6 +40,21 @@ export const resetPasswordSchema = z
 
 export type ResetPasswordFormData = z.infer<typeof resetPasswordSchema>;
 
+// Registro desde el login. No hay campo de rol: el trigger de profiles crea a todos como 'externo'
+export const signUpSchema = z
+  .object({
+    nombre: z.string().trim().min(1, "Ingresá tu nombre y apellido"),
+    email: z.string().email("Ingresá un email válido"),
+    password: z.string().min(6, "La contraseña tiene que tener al menos 6 caracteres"),
+    confirmacion: z.string(),
+  })
+  .refine((data) => data.password === data.confirmacion, {
+    message: "Las contraseñas no coinciden",
+    path: ["confirmacion"],
+  });
+
+export type SignUpFormData = z.infer<typeof signUpSchema>;
+
 export const aguaReportSchema = z.object({
   numero: z.object({
     laboratorio: z.number().int("Debe ser un número entero").min(1, "Debe ser un número positivo"),

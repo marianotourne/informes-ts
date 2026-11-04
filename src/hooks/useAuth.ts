@@ -35,10 +35,15 @@ export function useAuth() {
     return { data, error };
   };
 
-  const signUp = async (email: string, password: string) => {
+  // full_name lo lee el trigger handle_new_user para el nombre del perfil
+  const signUp = async (email: string, password: string, nombre: string) => {
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
+      options: {
+        data: { full_name: nombre },
+        emailRedirectTo: `${window.location.origin}/`,
+      },
     });
     return { data, error };
   };

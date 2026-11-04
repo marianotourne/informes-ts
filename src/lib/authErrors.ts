@@ -4,6 +4,9 @@ import { isAuthRetryableFetchError, type AuthError } from "@supabase/supabase-js
 const mensajesPorCodigo: Record<string, string> = {
   invalid_credentials: "Email o contraseña incorrectos.",
   email_not_confirmed: "Todavía no confirmaste tu email. Revisá tu casilla de correo.",
+  user_already_exists: "Ya existe una cuenta con ese email. Iniciá sesión o recuperá tu contraseña.",
+  email_exists: "Ya existe una cuenta con ese email. Iniciá sesión o recuperá tu contraseña.",
+  signup_disabled: "El registro de usuarios nuevos está deshabilitado. Comunicate con el laboratorio.",
   user_not_found: "No existe un usuario con ese email.",
   user_banned: "Tu usuario está bloqueado. Comunicate con el laboratorio.",
   over_request_rate_limit: "Hiciste demasiados intentos. Esperá unos minutos y probá de nuevo.",
