@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
-import { Loader2, Pencil, Plus, Search, Trash2 } from "lucide-react";
+import { Loader2, Pencil, Plus, Search, Trash2, Users } from "lucide-react";
 import { ClientFormDialog } from "./ClientFormDialog";
+import { ClientUsersDialog } from "./ClientUsersDialog";
 import { ConfirmDialog } from "./ConfirmDialog";
 import { TablePagination } from "./TablePagination";
 import { WhatsAppIcon } from "./icons/WhatsAppIcon";
@@ -43,6 +44,9 @@ export function Clients() {
   const [clientToDelete, setClientToDelete] = useState<Client | null>(null);
   // Separado del ítem para que el texto no se vacíe durante la animación de cierre
   const [confirmOpen, setConfirmOpen] = useState(false);
+  // Modal de usuarios externos asignados al cliente
+  const [usersClient, setUsersClient] = useState<Client | null>(null);
+  const [usersOpen, setUsersOpen] = useState(false);
 
   const filteredClients = useMemo(
     () => filterClients(clientsQuery.data ?? [], search),
@@ -216,6 +220,20 @@ export function Clients() {
                             type="button"
                             variant="ghost"
                             size="icon-sm"
+                            title="Usuarios con acceso"
+                            className="text-muted-foreground"
+                            onClick={() => {
+                              setUsersClient(client);
+                              setUsersOpen(true);
+                            }}
+                          >
+                            <Users className="w-4 h-4" />
+                          </Button>
+
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon-sm"
                             title="Modificar"
                             className="text-muted-foreground"
                             onClick={() => handleEditClient(client)}
@@ -259,6 +277,12 @@ export function Clients() {
         client={editingClient}
         isSaving={isSaving}
         onSubmit={handleSubmit}
+      />
+
+      <ClientUsersDialog
+        open={usersOpen}
+        onOpenChange={setUsersOpen}
+        client={usersClient}
       />
 
       <ConfirmDialog

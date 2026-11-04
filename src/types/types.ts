@@ -15,6 +15,20 @@ export interface Profile {
   rol: "interno" | "externo";
 }
 
+// Fila de list_externos(): perfil externo + email de auth.users
+export interface Externo {
+  id: string;
+  nombre: string;
+  email: string;
+  created_at: string;
+}
+
+// Fila de client_users: qué clientes ve cada usuario externo
+export interface ClientUser {
+  client_id: string;
+  user_id: string;
+}
+
 export type ReportType = "agua" | "alimentos" | "nutricion";
 
 export interface Report {
