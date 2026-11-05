@@ -1,5 +1,15 @@
 import { useMemo, useState } from "react";
-import { Loader2, Pencil, Plus, Search, Trash2, Users } from "lucide-react";
+import {
+  Loader2,
+  Mail,
+  MapPin,
+  Pencil,
+  Phone,
+  Plus,
+  Search,
+  Trash2,
+  Users,
+} from "lucide-react";
 import { ClientFormDialog } from "./ClientFormDialog";
 import { ClientUsersDialog } from "./ClientUsersDialog";
 import { ConfirmDialog } from "./ConfirmDialog";
@@ -79,9 +89,109 @@ export function Clients() {
     }
   };
 
+  const renderStatus = () => {
+    if (clientsQuery.isLoading) return "Cargando clientes...";
+    if (clientsQuery.isError)
+      return (
+        <span className="text-red-600 dark:text-red-400">
+          Error al cargar clientes: {clientsQuery.error.message}
+        </span>
+      );
+    if (filteredClients.length === 0)
+      return search.trim() ? (
+        <p className="text-sm">
+          No se encontraron clientes para "{search.trim()}"
+        </p>
+      ) : (
+        <>
+          <p className="text-sm">No hay clientes cargados aún</p>
+          <p className="text-xs mt-1">
+            Hacé clic en "Nuevo Cliente" para agregar uno
+          </p>
+        </>
+      );
+    return null;
+  };
+
+  const status = renderStatus();
+
+  // En la tabla van con size "icon-sm"; en las tarjetas del celular, más grandes para tocar
+  const renderActions = (
+    client: Client,
+    size: "icon-sm" | "icon" = "icon-sm",
+  ) => {
+    const whatsAppUrl = client.phone ? buildWhatsAppUrl(client.phone) : null;
+
+    return (
+      <div className="flex items-center justify-end gap-1">
+        {whatsAppUrl && (
+          <Button
+            asChild
+            variant="ghost"
+            size={size}
+            className="text-[#25D366] hover:bg-[#25D366]/10 hover:text-[#1da851]"
+          >
+            <a
+              href={whatsAppUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              title="Abrir chat de WhatsApp"
+            >
+              <WhatsAppIcon className="w-4 h-4" />
+            </a>
+          </Button>
+        )}
+
+        <Button
+          type="button"
+          variant="ghost"
+          size={size}
+          title="Usuarios con acceso"
+          className="text-muted-foreground"
+          onClick={() => {
+            setUsersClient(client);
+            setUsersOpen(true);
+          }}
+        >
+          <Users className="w-4 h-4" />
+        </Button>
+
+        <Button
+          type="button"
+          variant="ghost"
+          size={size}
+          title="Modificar"
+          className="text-muted-foreground"
+          onClick={() => handleEditClient(client)}
+        >
+          <Pencil className="w-4 h-4" />
+        </Button>
+
+        <Button
+          type="button"
+          variant="ghost"
+          size={size}
+          title="Eliminar"
+          className="text-destructive hover:bg-destructive/10 hover:text-destructive"
+          onClick={() => {
+            setClientToDelete(client);
+            setConfirmOpen(true);
+          }}
+          disabled={deletingId === client.id}
+        >
+          {deletingId === client.id ? (
+            <Loader2 className="w-4 h-4 animate-spin" />
+          ) : (
+            <Trash2 className="w-4 h-4" />
+          )}
+        </Button>
+      </div>
+    );
+  };
+
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
+    <div className="space-y-4 md:space-y-6">
+      <div className="flex justify-between items-center gap-4">
         <h1 className="text-2xl md:text-4xl font-bold text-blue-600">
           Clientes
         </h1>
@@ -96,7 +206,7 @@ export function Clients() {
       </div>
 
       {/* Búsqueda */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-4 md:p-6">
         <label
           htmlFor="search"
           className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
@@ -120,7 +230,54 @@ export function Clients() {
       </div>
 
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
-        <div className="overflow-x-auto">
+        {/* Celular: una tarjeta por cliente */}
+        <div className="md:hidden divide-y divide-gray-200 dark:divide-gray-700">
+          {status ? (
+            <div className="px-4 py-12 text-center text-gray-500 dark:text-gray-400">
+              {status}
+            </div>
+          ) : (
+            pageItems.map((client) => (
+              <div key={client.id} className="px-4 py-3">
+                <div className="space-y-1 text-sm min-w-0">
+                  <p className="font-medium text-base text-gray-900 dark:text-gray-100 break-words">
+                    {client.name}
+                  </p>
+                  {client.phone && (
+                    <a
+                      href={`tel:${client.phone}`}
+                      className="flex items-center gap-2 text-gray-700 dark:text-gray-300"
+                    >
+                      <Phone className="w-4 h-4 shrink-0 text-gray-400" />
+                      {client.phone}
+                    </a>
+                  )}
+                  {client.email && (
+                    <a
+                      href={`mailto:${client.email}`}
+                      className="flex items-center gap-2 text-gray-700 dark:text-gray-300 min-w-0"
+                    >
+                      <Mail className="w-4 h-4 shrink-0 text-gray-400" />
+                      <span className="break-all">{client.email}</span>
+                    </a>
+                  )}
+                  {client.address && (
+                    <p className="flex items-start gap-2 text-gray-700 dark:text-gray-300">
+                      <MapPin className="w-4 h-4 shrink-0 mt-0.5 text-gray-400" />
+                      <span className="break-words min-w-0">
+                        {client.address}
+                      </span>
+                    </p>
+                  )}
+                </div>
+                <div className="mt-1 -mr-2">{renderActions(client, "icon")}</div>
+              </div>
+            ))
+          )}
+        </div>
+
+        {/* Escritorio: tabla */}
+        <div className="hidden md:block overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
             <thead className="bg-gray-50 dark:bg-gray-900">
               <tr>
@@ -142,128 +299,29 @@ export function Clients() {
               </tr>
             </thead>
             <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-              {clientsQuery.isLoading ? (
+              {status ? (
                 <tr>
                   <td
                     colSpan={5}
                     className="px-6 py-12 text-center text-gray-500 dark:text-gray-400"
                   >
-                    Cargando clientes...
-                  </td>
-                </tr>
-              ) : clientsQuery.isError ? (
-                <tr>
-                  <td
-                    colSpan={5}
-                    className="px-6 py-12 text-center text-red-600 dark:text-red-400"
-                  >
-                    Error al cargar clientes: {clientsQuery.error.message}
-                  </td>
-                </tr>
-              ) : filteredClients.length === 0 ? (
-                <tr>
-                  <td
-                    colSpan={5}
-                    className="px-6 py-12 text-center text-gray-500 dark:text-gray-400"
-                  >
-                    {search.trim() ? (
-                      <p className="text-sm">
-                        No se encontraron clientes para "{search.trim()}"
-                      </p>
-                    ) : (
-                      <>
-                        <p className="text-sm">No hay clientes cargados aún</p>
-                        <p className="text-xs mt-1">
-                          Hacé clic en "Nuevo Cliente" para agregar uno
-                        </p>
-                      </>
-                    )}
+                    {status}
                   </td>
                 </tr>
               ) : (
-                pageItems.map((client) => {
-                  const whatsAppUrl = client.phone
-                    ? buildWhatsAppUrl(client.phone)
-                    : null;
-
-                  return (
-                    <tr key={client.id}>
-                      <td className={`${tdClassName} font-medium`}>
-                        {client.name}
-                      </td>
-                      <td className={tdClassName}>{client.phone || "—"}</td>
-                      <td className={tdClassName}>{client.email || "—"}</td>
-                      <td className={tdClassName}>{client.address || "—"}</td>
-
-                      {/* Acciones */}
-                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm">
-                        <div className="flex items-center justify-end gap-1">
-                          {whatsAppUrl && (
-                            <Button
-                              asChild
-                              variant="ghost"
-                              size="icon-sm"
-                              className="text-[#25D366] hover:bg-[#25D366]/10 hover:text-[#1da851]"
-                            >
-                              <a
-                                href={whatsAppUrl}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                title="Abrir chat de WhatsApp"
-                              >
-                                <WhatsAppIcon className="w-4 h-4" />
-                              </a>
-                            </Button>
-                          )}
-
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="icon-sm"
-                            title="Usuarios con acceso"
-                            className="text-muted-foreground"
-                            onClick={() => {
-                              setUsersClient(client);
-                              setUsersOpen(true);
-                            }}
-                          >
-                            <Users className="w-4 h-4" />
-                          </Button>
-
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="icon-sm"
-                            title="Modificar"
-                            className="text-muted-foreground"
-                            onClick={() => handleEditClient(client)}
-                          >
-                            <Pencil className="w-4 h-4" />
-                          </Button>
-
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="icon-sm"
-                            title="Eliminar"
-                            className="text-destructive hover:bg-destructive/10 hover:text-destructive"
-                            onClick={() => {
-                              setClientToDelete(client);
-                              setConfirmOpen(true);
-                            }}
-                            disabled={deletingId === client.id}
-                          >
-                            {deletingId === client.id ? (
-                              <Loader2 className="w-4 h-4 animate-spin" />
-                            ) : (
-                              <Trash2 className="w-4 h-4" />
-                            )}
-                          </Button>
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })
+                pageItems.map((client) => (
+                  <tr key={client.id}>
+                    <td className={`${tdClassName} font-medium`}>
+                      {client.name}
+                    </td>
+                    <td className={tdClassName}>{client.phone || "—"}</td>
+                    <td className={tdClassName}>{client.email || "—"}</td>
+                    <td className={tdClassName}>{client.address || "—"}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm">
+                      {renderActions(client)}
+                    </td>
+                  </tr>
+                ))
               )}
             </tbody>
           </table>
