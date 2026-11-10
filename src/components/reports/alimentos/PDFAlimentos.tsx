@@ -261,7 +261,8 @@ export const PDFAlimentos = ({
               {tieneResultado(r.escherichia) && (
                 <TR>
                   <TD style={styles.columnaTitulo}>
-                    <Text style={{ fontStyle: "italic" }}>Escherichia coli</Text>
+                    {/* Extra space: the italic "i" leans into the "(" */}
+                    <Text style={{ fontStyle: "italic" }}>Escherichia coli </Text>
                     <Text>{unidadRecuento(r.escherichia)}</Text>
                   </TD>
                   <TD style={styles.demasColumnas}>
