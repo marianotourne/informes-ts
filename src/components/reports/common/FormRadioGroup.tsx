@@ -13,6 +13,7 @@ type FormRadioGroupProps<T extends FieldValues> = {
   name: FieldPath<T>;
   options: Option[];
   className?: string;
+  disabled?: boolean;
 };
 
 // Radio list bound to a string field of the surrounding FormProvider.
@@ -21,6 +22,7 @@ export function FormRadioGroup<T extends FieldValues>({
   name,
   options,
   className,
+  disabled,
 }: FormRadioGroupProps<T>) {
   const { control } = useFormContext<T>();
 
@@ -34,6 +36,7 @@ export function FormRadioGroup<T extends FieldValues>({
           name={field.name}
           value={field.value ?? ""}
           onValueChange={field.onChange}
+          disabled={disabled}
           className={cn("flex flex-wrap items-center gap-4", className)}
         >
           {options.map((option) => {

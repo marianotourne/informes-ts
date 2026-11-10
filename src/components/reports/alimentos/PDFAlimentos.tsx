@@ -16,7 +16,11 @@ import LatoBold from "@/assets/fonts/Lato-Bold.ttf";
 import LatoItalic from "@/assets/fonts/Lato-Italic.ttf";
 import LatoBoldItalic from "@/assets/fonts/Lato-BoldItalic.ttf";
 import type { Report, ReportFood } from "@/types/types";
-import { completarResultados } from "@/lib/alimentos";
+import {
+  completarResultados,
+  tieneResultado,
+  unidadRecuento,
+} from "@/lib/alimentos";
 
 Font.registerHyphenationCallback((word) => [word]);
 
@@ -81,9 +85,6 @@ const formatDate = (value?: string | null) => {
   return parsed.format("DD/MM/YYYY");
 };
 
-const hasValue = (value?: number | null) =>
-  value !== null && value !== undefined;
-
 // Count as "base x 10ⁿ": one space before the "x" and the exponent right
 // after the 10 (e.g. "1,5 x 10³", "<1 x 10²")
 const Potencia = ({
@@ -98,6 +99,29 @@ const Potencia = ({
     <Text style={styles.resultadosExponente}>{exponente}</Text>
   </View>
 );
+
+// Text result as-is, "<10", "<1 x 10²" or "base x 10ⁿ"
+const ValorRecuento = ({
+  recuento,
+}: {
+  recuento: {
+    base?: number;
+    exponente?: number;
+    menor10: boolean;
+    menor1?: boolean;
+    texto: string;
+  };
+}) => {
+  if (recuento.texto) return <Text>{recuento.texto}</Text>;
+  if (recuento.menor10) return <Text>{`<10`}</Text>;
+  if (recuento.menor1) return <Potencia base="<1" exponente={2} />;
+  return (
+    <Potencia
+      base={formatter.format(recuento.base ?? 0)}
+      exponente={recuento.exponente}
+    />
+  );
+};
 
 type PDFAlimentosProps = {
   report: Report;
@@ -119,29 +143,12 @@ export const PDFAlimentos = ({
   const { humedad, ph, gradosbrics: gradosBrics } = r;
 
   const recuentos = [
-    {
-      id: 1,
-      title: "Aerobias mesófilas (UFC/",
-      base: r.aerobias.base,
-      exponente: r.aerobias.exponente,
-      menor10: r.aerobias.menor10,
-      unidad: r.aerobias.unidad,
-    },
-    {
-      id: 2,
-      title: "Coliformes totales (UFC/",
-      base: r.coliformesTotales.base,
-      exponente: r.coliformesTotales.exponente,
-      menor10: r.coliformesTotales.menor10,
-      unidad: r.coliformesTotales.unidad,
-    },
+    { id: 1, title: "Aerobias mesófilas", recuento: r.aerobias },
+    { id: 2, title: "Coliformes totales", recuento: r.coliformesTotales },
     {
       id: 3,
-      title: "Coliformes termotolerantes (UFC/",
-      base: r.coliformesTermotolerantes.base,
-      exponente: r.coliformesTermotolerantes.exponente,
-      menor10: r.coliformesTermotolerantes.menor10,
-      unidad: r.coliformesTermotolerantes.unidad,
+      title: "Coliformes termotolerantes",
+      recuento: r.coliformesTermotolerantes,
     },
   ];
 
@@ -192,138 +199,85 @@ export const PDFAlimentos = ({
             <Text style={{ fontWeight: "bold", marginBottom: 5 }}>
               Resultados de los análisis
             </Text>
-            <Table style={styles.remitente} weightings={[0.8, 0.3]}>
-              {recuentos.map((recuento) =>
-                recuento.menor10 || hasValue(recuento.base) ? (
-                  <TR key={recuento.id}>
+            {/* Same 400px total; the value column is wide enough for text
+                results on one line, and the name column still fits the longest
+                fixed label (Estafilococos aureus coag. positiva (UFC/ml)) */}
+            <Table style={styles.remitente} weightings={[0.55, 0.45]}>
+              {recuentos.map(({ id, title, recuento }) =>
+                tieneResultado(recuento) ? (
+                  <TR key={id}>
                     <TD style={styles.columnaTitulo}>
-                      {`${recuento.title}${recuento.unidad ?? ""})`}
+                      {`${title}${unidadRecuento(recuento)}`}
                     </TD>
                     <TD style={styles.demasColumnas}>
-                      {recuento.menor10 ? (
-                        `<10`
-                      ) : (
-                        <Potencia
-                          base={formatter.format(recuento.base ?? 0)}
-                          exponente={recuento.exponente}
-                        />
-                      )}
+                      <ValorRecuento recuento={recuento} />
                     </TD>
                   </TR>
                 ) : null,
               )}
 
               {/* ESTAFILOCOCO */}
-              {(r.estafilococo.menor10 ||
-                r.estafilococo.menor1 ||
-                hasValue(r.estafilococo.base)) && (
+              {tieneResultado(r.estafilococo) && (
                 <TR>
                   <TD style={styles.columnaTitulo}>
                     <Text style={{ fontStyle: "italic" }}>
                       Estafilococos aureus{" "}
                     </Text>
                     <Text>
-                      {`coag. positiva (UFC/${r.estafilococo.unidad ?? ""})`}
+                      {`coag. positiva${unidadRecuento(r.estafilococo)}`}
                     </Text>
                   </TD>
                   <TD style={styles.demasColumnas}>
-                    {r.estafilococo.menor10 ? (
-                      <View>
-                        <Text style={styles.resultadosBase}>{`<10`}</Text>
-                      </View>
-                    ) : r.estafilococo.menor1 ? (
-                      <Potencia base="<1" exponente={2} />
-                    ) : (
-                      <Potencia
-                        base={formatter.format(r.estafilococo.base ?? 0)}
-                        exponente={r.estafilococo.exponente}
-                      />
-                    )}
+                    <ValorRecuento recuento={r.estafilococo} />
                   </TD>
                 </TR>
               )}
 
               {/* BACTERIAS ACIDOLÁCTICAS */}
-              {(r.bacterias.menor10 || hasValue(r.bacterias.base)) && (
+              {tieneResultado(r.bacterias) && (
                 <TR>
                   <TD style={styles.columnaTitulo}>
-                    {`Bacterias acido-lácticas (UFC/${r.bacterias.unidad ?? ""})`}
+                    {`Bacterias acido-lácticas${unidadRecuento(r.bacterias)}`}
                   </TD>
                   <TD style={styles.demasColumnas}>
-                    {r.bacterias.menor10 ? (
-                      `<10`
-                    ) : (
-                      <Potencia
-                        base={formatter.format(r.bacterias.base ?? 0)}
-                        exponente={r.bacterias.exponente}
-                      />
-                    )}
+                    <ValorRecuento recuento={r.bacterias} />
                   </TD>
                 </TR>
               )}
 
               {/* SULFITO REDUCTORES */}
-              {(r.sulfito.menor10 || hasValue(r.sulfito.base)) && (
+              {tieneResultado(r.sulfito) && (
                 <TR>
                   <TD style={styles.columnaTitulo}>
-                    {`Sulfito reductores (UFC/${r.sulfito.unidad ?? ""})`}
+                    {`Sulfito reductores${unidadRecuento(r.sulfito)}`}
                   </TD>
                   <TD style={styles.demasColumnas}>
-                    {r.sulfito.menor10 ? (
-                      `<10`
-                    ) : (
-                      <Potencia
-                        base={formatter.format(r.sulfito.base ?? 0)}
-                        exponente={r.sulfito.exponente}
-                      />
-                    )}
+                    <ValorRecuento recuento={r.sulfito} />
                   </TD>
                 </TR>
               )}
 
               {/* ESCHERICHIA COLI */}
-              {(r.escherichia.menor10 || hasValue(r.escherichia.base)) && (
+              {tieneResultado(r.escherichia) && (
                 <TR>
                   <TD style={styles.columnaTitulo}>
-                    <Text style={{ fontStyle: "italic" }}>
-                      Escherichia coli{" "}
-                    </Text>
-                    <Text>{`(UFC/${r.escherichia.unidad ?? ""})`}</Text>
+                    <Text style={{ fontStyle: "italic" }}>Escherichia coli</Text>
+                    <Text>{unidadRecuento(r.escherichia)}</Text>
                   </TD>
                   <TD style={styles.demasColumnas}>
-                    {r.escherichia.menor10 ? (
-                      `<10`
-                    ) : (
-                      <Potencia
-                        base={formatter.format(r.escherichia.base ?? 0)}
-                        exponente={r.escherichia.exponente}
-                      />
-                    )}
+                    <ValorRecuento recuento={r.escherichia} />
                   </TD>
                 </TR>
               )}
 
               {/* MOHOS Y LEVADURAS */}
-              {(r.mohos.menor10 ||
-                r.mohos.menor1 ||
-                hasValue(r.mohos.base)) && (
+              {tieneResultado(r.mohos) && (
                 <TR>
                   <TD style={styles.columnaTitulo}>
-                    {`Mohos y levaduras (UFC/${r.mohos.unidad ?? ""})`}
+                    {`Mohos y levaduras${unidadRecuento(r.mohos)}`}
                   </TD>
                   <TD style={styles.demasColumnas}>
-                    {r.mohos.menor10 ? (
-                      <View>
-                        <Text style={styles.resultadosBase}>{`<10`}</Text>
-                      </View>
-                    ) : r.mohos.menor1 ? (
-                      <Potencia base="<1" exponente={2} />
-                    ) : (
-                      <Potencia
-                        base={formatter.format(r.mohos.base ?? 0)}
-                        exponente={r.mohos.exponente}
-                      />
-                    )}
+                    <ValorRecuento recuento={r.mohos} />
                   </TD>
                 </TR>
               )}
@@ -382,17 +336,10 @@ export const PDFAlimentos = ({
               {r.otrosRecuentos.map((recuento, index) => (
                 <TR key={`recuento-${index}`}>
                   <TD style={styles.columnaTitulo}>
-                    {`${recuento.nombre} (UFC/${recuento.unidad})`}
+                    {`${recuento.nombre}${unidadRecuento(recuento)}`}
                   </TD>
                   <TD style={styles.demasColumnas}>
-                    {recuento.menor10 ? (
-                      `<10`
-                    ) : (
-                      <Potencia
-                        base={formatter.format(recuento.base ?? 0)}
-                        exponente={recuento.exponente}
-                      />
-                    )}
+                    <ValorRecuento recuento={recuento} />
                   </TD>
                 </TR>
               ))}

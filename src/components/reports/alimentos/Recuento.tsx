@@ -30,7 +30,7 @@ const toNumber = (v: unknown) =>
   v === "" || v === null || v === undefined ? undefined : Number(v);
 
 type RecuentoErrors = Partial<
-  Record<"base" | "exponente" | "menor10" | "unidad", FieldError>
+  Record<"base" | "exponente" | "menor10" | "unidad" | "texto", FieldError>
 >;
 
 type RecuentoProps =
@@ -51,6 +51,12 @@ export function Recuento(props: RecuentoProps) {
   const menor10 = watch(`resultados.${name}.menor10`);
   const menor1 = "conMenor1" in props && watch(`resultados.${props.name}.menor1`);
   const esMenor = menor10 || menor1;
+  const base = watch(`resultados.${name}.base`);
+  const exponente = watch(`resultados.${name}.exponente`);
+  const texto = watch(`resultados.${name}.texto`);
+  // A text result and the numeric options exclude each other (the unit applies to both)
+  const conTexto = !!texto?.trim();
+  const conOpciones = esMenor || base !== undefined || exponente !== undefined;
   const fieldErrors: RecuentoErrors | undefined = get(
     errors,
     `resultados.${name}`,
@@ -90,10 +96,12 @@ export function Recuento(props: RecuentoProps) {
     setValue(`resultados.${name}.menor10`, false);
     if ("conMenor1" in props) setValue(`resultados.${props.name}.menor1`, false);
     setValue(`resultados.${name}.unidad`, "");
+    setValue(`resultados.${name}.texto`, "");
     revalidate();
   };
 
   const errorMessage =
+    fieldErrors?.texto?.message ??
     fieldErrors?.base?.message ??
     fieldErrors?.exponente?.message ??
     fieldErrors?.menor10?.message ??
@@ -110,7 +118,7 @@ export function Recuento(props: RecuentoProps) {
             type="number"
             step="any"
             placeholder="Base"
-            disabled={esMenor}
+            disabled={esMenor || conTexto}
             {...register(`resultados.${name}.base`, { setValueAs: toNumber })}
             aria-invalid={fieldErrors?.base ? "true" : "false"}
             className="w-20 sm:w-24"
@@ -119,7 +127,7 @@ export function Recuento(props: RecuentoProps) {
           <Input
             type="number"
             placeholder="Exp."
-            disabled={esMenor}
+            disabled={esMenor || conTexto}
             {...register(`resultados.${name}.exponente`, {
               setValueAs: toNumber,
             })}
@@ -132,6 +140,7 @@ export function Recuento(props: RecuentoProps) {
           <label className="flex items-center gap-2">
             <input
               type="checkbox"
+              disabled={conTexto}
               {...register(`resultados.${props.name}.menor1`, {
                 onChange: (e) => handleMenor1(e.target.checked),
               })}
@@ -146,6 +155,7 @@ export function Recuento(props: RecuentoProps) {
         <label className="flex items-center gap-2">
           <input
             type="checkbox"
+            disabled={conTexto}
             {...register(`resultados.${name}.menor10`, {
               onChange: (e) => handleMenor10(e.target.checked),
             })}
@@ -157,6 +167,15 @@ export function Recuento(props: RecuentoProps) {
         <FormRadioGroup<AlimentosReportFormData>
           name={`resultados.${name}.unidad`}
           options={unidades}
+        />
+
+        <Input
+          placeholder="o texto"
+          title="Resultado en texto (excluye las demás opciones)"
+          disabled={conOpciones}
+          {...register(`resultados.${name}.texto`, { onChange: revalidate })}
+          aria-invalid={fieldErrors?.texto ? "true" : "false"}
+          className="w-full sm:w-56"
         />
 
         <button

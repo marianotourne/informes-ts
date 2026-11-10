@@ -91,13 +91,15 @@ const otroAnalisisSchema = (valor: z.ZodOptional<z.ZodNumber>) =>
     valor: valor.refine((v) => v !== undefined, "Cargá el resultado"),
   });
 
-// Microbial count: either base x 10^exponente, or "< 10" / "< 1x10²" (never both).
+// Microbial count: either base x 10^exponente, or "< 10" / "< 1x10²" (never both),
+// or a free text result that excludes all of the above. The unit applies to all three.
 // A count left completely empty means the analysis was not performed.
 const recuentoFields = {
   base: z.number().positive("Debe ser positivo").optional(),
   exponente: z.number().int("Debe ser entero").min(1, "Mínimo 1").max(10, "Máximo 10").optional(),
   menor10: z.boolean(),
   unidad: z.string(), // "g" | "ml"
+  texto: z.string().trim(),
 };
 
 type Recuento = {
@@ -106,12 +108,26 @@ type Recuento = {
   menor10: boolean;
   menor1?: boolean;
   unidad: string;
+  texto: string;
 };
 
 const validarRecuento = (r: Recuento, ctx: z.RefinementCtx) => {
   const esMenor = r.menor10 || !!r.menor1;
   const tieneValor = r.base !== undefined || r.exponente !== undefined;
 
+  if (r.texto) {
+    if (esMenor || tieneValor) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["texto"],
+        message: "Con texto no se cargan base, exponente, < 10 ni < 1x10²",
+      });
+    }
+    if (!r.unidad) {
+      ctx.addIssue({ code: "custom", path: ["unidad"], message: "Elegí la unidad" });
+    }
+    return;
+  }
   if (r.menor10 && r.menor1) {
     ctx.addIssue({ code: "custom", path: ["menor10"], message: "Elegí solo una opción: < 10 o < 1x10²" });
   }
@@ -137,7 +153,7 @@ const recuentoMenor1Schema = z
 const otroRecuentoSchema = z
   .object({ nombre: nombreAnalisis, ...recuentoFields })
   .superRefine((r, ctx) => {
-    if (!r.menor10 && r.base === undefined && r.exponente === undefined) {
+    if (!r.texto && !r.menor10 && r.base === undefined && r.exponente === undefined) {
       ctx.addIssue({ code: "custom", path: ["base"], message: "Cargá el resultado" });
     }
     validarRecuento(r, ctx);

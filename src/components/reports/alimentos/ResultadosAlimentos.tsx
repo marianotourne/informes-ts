@@ -185,6 +185,7 @@ export function ResultadosAlimentos() {
                   exponente: undefined,
                   menor10: false,
                   unidad: "",
+                  texto: "",
                 })
               }
             >

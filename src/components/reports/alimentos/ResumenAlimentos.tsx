@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import type { ReportFood } from "@/types/types";
-import { completarResultados } from "@/lib/alimentos";
+import { completarResultados, unidadRecuento } from "@/lib/alimentos";
 import {
   Potencia,
   ResumenFilas,
@@ -14,10 +14,12 @@ type Recuento = {
   exponente?: number;
   menor10?: boolean;
   menor1?: boolean;
+  texto?: string;
 };
 
-// Mismo formato que el PDF: "<10", "<1 × 10²" o "base × 10ⁿ"; "" si no está cargado
+// Mismo formato que el PDF: texto, "<10", "<1 × 10²" o "base × 10ⁿ"; "" si no está cargado
 const valorRecuento = (recuento: Recuento): ReactNode => {
+  if (recuento.texto) return recuento.texto;
   if (recuento.menor10) return "<10";
   if (recuento.menor1) return <Potencia base="<1" exponente={2} />;
   if (!hasValue(recuento.base)) return "";
@@ -45,51 +47,52 @@ export function ResumenAlimentos({
   const resultados: ResumenFila[] = [
     {
       key: "aerobias",
-      label: `Aerobias mesófilas (UFC/${r.aerobias.unidad ?? ""})`,
+      label: `Aerobias mesófilas${unidadRecuento(r.aerobias)}`,
       valor: valorRecuento(r.aerobias),
     },
     {
       key: "coliformesTotales",
-      label: `Coliformes totales (UFC/${r.coliformesTotales.unidad ?? ""})`,
+      label: `Coliformes totales${unidadRecuento(r.coliformesTotales)}`,
       valor: valorRecuento(r.coliformesTotales),
     },
     {
       key: "coliformesTermotolerantes",
-      label: `Coliformes termotolerantes (UFC/${r.coliformesTermotolerantes.unidad ?? ""})`,
+      label: `Coliformes termotolerantes${unidadRecuento(r.coliformesTermotolerantes)}`,
       valor: valorRecuento(r.coliformesTermotolerantes),
     },
     {
       key: "estafilococo",
       label: (
         <>
-          <i>Estafilococos aureus</i> coag. positiva (UFC/
-          {r.estafilococo.unidad ?? ""})
+          <i>Estafilococos aureus</i> coag. positiva
+          {unidadRecuento(r.estafilococo)}
         </>
       ),
       valor: valorRecuento(r.estafilococo),
     },
     {
       key: "bacterias",
-      label: `Bacterias acido-lácticas (UFC/${r.bacterias.unidad ?? ""})`,
+      label: `Bacterias acido-lácticas${unidadRecuento(r.bacterias)}`,
       valor: valorRecuento(r.bacterias),
     },
     {
       key: "sulfito",
-      label: `Sulfito reductores (UFC/${r.sulfito.unidad ?? ""})`,
+      label: `Sulfito reductores${unidadRecuento(r.sulfito)}`,
       valor: valorRecuento(r.sulfito),
     },
     {
       key: "escherichia",
       label: (
         <>
-          <i>Escherichia coli</i> (UFC/{r.escherichia.unidad ?? ""})
+          <i>Escherichia coli</i>
+          {unidadRecuento(r.escherichia)}
         </>
       ),
       valor: valorRecuento(r.escherichia),
     },
     {
       key: "mohos",
-      label: `Mohos y levaduras (UFC/${r.mohos.unidad ?? ""})`,
+      label: `Mohos y levaduras${unidadRecuento(r.mohos)}`,
       valor: valorRecuento(r.mohos),
     },
     {
@@ -109,15 +112,8 @@ export function ResumenAlimentos({
     })),
     ...r.otrosRecuentos.map((recuento, index) => ({
       key: `recuento${index}`,
-      label: `${recuento.nombre} (UFC/${recuento.unidad})`,
-      valor: recuento.menor10 ? (
-        "<10"
-      ) : (
-        <Potencia
-          base={formatter.format(recuento.base ?? 0)}
-          exponente={recuento.exponente}
-        />
-      ),
+      label: `${recuento.nombre}${unidadRecuento(recuento)}`,
+      valor: valorRecuento(recuento),
     })),
   ];
 
