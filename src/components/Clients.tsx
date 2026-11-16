@@ -240,7 +240,7 @@ export function Clients() {
             pageItems.map((client) => (
               <div key={client.id} className="px-4 py-3">
                 <div className="space-y-1 text-sm min-w-0">
-                  <p className="font-medium text-base text-gray-900 dark:text-gray-100 break-words">
+                  <p className="font-medium text-base text-gray-900 dark:text-gray-100 wrap-break-word">
                     {client.name}
                   </p>
                   {client.phone && (
@@ -264,7 +264,7 @@ export function Clients() {
                   {client.address && (
                     <p className="flex items-start gap-2 text-gray-700 dark:text-gray-300">
                       <MapPin className="w-4 h-4 shrink-0 mt-0.5 text-gray-400" />
-                      <span className="break-words min-w-0">
+                      <span className="wrap-break-word min-w-0">
                         {client.address}
                       </span>
                     </p>

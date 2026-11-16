@@ -767,7 +767,7 @@ export function Reports() {
                   className="w-full text-left space-y-1"
                 >
                   <div className="flex items-start justify-between gap-3">
-                    <p className="font-medium text-gray-900 dark:text-gray-100 break-words min-w-0">
+                    <p className="font-medium text-gray-900 dark:text-gray-100 wrap-break-word min-w-0">
                       {getClientName(item.report.client_id)}
                     </p>
                     <div className="shrink-0 text-xs">

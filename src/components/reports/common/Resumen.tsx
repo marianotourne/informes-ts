@@ -60,7 +60,7 @@ export function ResumenFilas({ filas }: { filas: ResumenFila[] }) {
           >
             {fila.label}
           </dt>
-          <dd className="text-right shrink-0 max-w-[60%] break-words">
+          <dd className="text-right shrink-0 max-w-[60%] wrap-break-word">
             <span
               className={cn(
                 "font-medium text-gray-900 dark:text-gray-100",
