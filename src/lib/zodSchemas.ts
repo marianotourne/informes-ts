@@ -15,6 +15,27 @@ export const clientSchema = z.object({
 
 export type ClientFormData = z.infer<typeof clientSchema>;
 
+// Envío de un informe por mail. "para" acepta varias direcciones separadas por coma o punto y coma
+export const reportEmailSchema = z.object({
+  para: z
+    .string()
+    .trim()
+    .min(1, "Ingresá al menos un destinatario")
+    .refine(
+      (v) =>
+        v
+          .split(/[,;]/)
+          .map((s) => s.trim())
+          .filter(Boolean)
+          .every((s) => z.email().safeParse(s).success),
+      { message: "Algún correo electrónico no es válido" },
+    ),
+  asunto: z.string().trim().min(1, "El asunto es obligatorio"),
+  cuerpo: z.string(),
+});
+
+export type ReportEmailFormData = z.infer<typeof reportEmailSchema>;
+
 export const loginSchema = z.object({
   email: z.string().email("Ingresá un email válido"),
   password: z.string().min(6, "La contraseña tiene que tener al menos 6 caracteres"),

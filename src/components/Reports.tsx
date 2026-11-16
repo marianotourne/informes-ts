@@ -18,7 +18,7 @@ import {
 } from "./ui/select";
 import { useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
-import type { FullReport, ReportType } from "@/types/types";
+import type { Client, FullReport, ReportType } from "@/types/types";
 import { deleteReport, fetchAllReports } from "@/api/reportsApi";
 import { useClients } from "@/hooks/useClients";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -26,9 +26,13 @@ import { formatDate } from "@/hooks/useDate";
 import { usePagination } from "@/hooks/usePagination";
 import { useProfile } from "@/hooks/useProfile";
 
-import { Eye, Pencil, FileDown, Trash2, Loader2 } from "lucide-react";
+import { Eye, Pencil, FileDown, Trash2, Loader2, Mail } from "lucide-react";
 import { pdf } from "@react-pdf/renderer";
 import { ConfirmDialog } from "./ConfirmDialog";
+import {
+  SendReportEmailDialog,
+  type ReportEmailDraft,
+} from "./SendReportEmailDialog";
 import { TablePagination } from "./TablePagination";
 import { DatePicker } from "./DatePicker";
 import { TruncatedText } from "./TruncatedText";
@@ -270,20 +274,23 @@ export function Reports() {
     queryFn: fetchAllReports,
   });
 
-  // Mapa de clientId -> nombre, se recalcula solo cuando cambian los clientes
-  const clientNameById = useMemo(() => {
-    const map = new Map<string, string>();
-    clientsQuery.data?.forEach((c) => map.set(c.id, c.name));
+  // Mapa de clientId -> cliente, se recalcula solo cuando cambian los clientes
+  const clientById = useMemo(() => {
+    const map = new Map<string, Client>();
+    clientsQuery.data?.forEach((c) => map.set(c.id, c));
     return map;
   }, [clientsQuery.data]);
 
   const getClientName = useCallback(
     (clientId: string) => {
       if (!clientId) return "—";
-      return clientNameById.get(clientId) ?? "—";
+      return clientById.get(clientId)?.name ?? "—";
     },
-    [clientNameById],
+    [clientById],
   );
+
+  const getClientEmail = (clientId: string) =>
+    clientById.get(clientId)?.email?.trim() || null;
 
   // Generar PDF
   const [generatingPdfId, setGeneratingPdfId] = useState<string | null>(null);
@@ -304,6 +311,33 @@ export function Reports() {
     } finally {
       setGeneratingPdfId(null);
     }
+  };
+
+  // Enviar por mail
+  const [emailDraft, setEmailDraft] = useState<ReportEmailDraft | null>(null);
+  // Separado del borrador para que el contenido no se vacíe durante la animación de cierre
+  const [emailOpen, setEmailOpen] = useState(false);
+
+  const handleOpenEmail = (item: FullReport) => {
+    const email = getClientEmail(item.report.client_id);
+    if (!email) return;
+    const clientName = getClientName(item.report.client_id);
+    const { document: pdfDocument, filename } = getPdf(item, clientName);
+    const tipo = getReportTypeLabel(item.type);
+    const numero = getReportNumber(item);
+    const detalle = getDetail(item).detalle;
+
+    setEmailDraft({
+      para: email,
+      asunto: `Informe de análisis de ${tipo} N° ${numero}`,
+      cuerpo:
+        `Estimados/as:\n\nAdjuntamos el informe de análisis de ${tipo} N° ${numero}` +
+        (detalle ? ` (${detalle})` : "") +
+        ".\n\nSaludos cordiales.",
+      pdfFilename: filename,
+      buildPdf: () => pdf(pdfDocument).toBlob(),
+    });
+    setEmailOpen(true);
   };
 
   const handleSelectType = (type: ReportType) => {
@@ -500,6 +534,19 @@ export function Reports() {
           <FileDown className="w-4 h-4" />
         )}
       </Button>
+
+      {isInterno && getClientEmail(item.report.client_id) && (
+        <Button
+          type="button"
+          variant="ghost"
+          size={size}
+          title="Enviar por mail"
+          className="text-primary hover:bg-primary/10 hover:text-primary"
+          onClick={() => handleOpenEmail(item)}
+        >
+          <Mail className="w-4 h-4" />
+        </Button>
+      )}
 
       {isInterno && (
         <Button
@@ -847,6 +894,12 @@ export function Reports() {
         </div>
         <TablePagination {...pagination} onPageChange={setPage} />
       </div>
+
+      <SendReportEmailDialog
+        open={emailOpen}
+        onOpenChange={setEmailOpen}
+        draft={emailDraft}
+      />
 
       <ConfirmDialog
         open={confirmOpen}

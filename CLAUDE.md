@@ -31,6 +31,8 @@ React 19 + Vite 7 + TypeScript, Tailwind v4 (via `@tailwindcss/vite`, no tailwin
 
 **PDF generation.** `PDFAgua.tsx` is a `@react-pdf/renderer` document (Lato fonts and logo/signature images bundled from `src/assets`). It is rendered in-page with `PDFViewer`/`PDFDownloadLink` in `ViewReportAgua` and generated on demand with `pdf()` from the reports list. Filenames come from `buildAguaReportFilename` in `src/lib/utils.ts`.
 
+**Email.** Internal users can email a report from the reports list (envelope icon, shown only when the client has an email). `SendReportEmailDialog` generates the PDF on send and posts it plus any local files as multipart to the Supabase Edge Function `supabase/functions/send-report-email` (via `src/api/emailApi.ts`). The function checks the caller is `interno` and sends by SMTP using the `SMTP_*` secrets. Supabase blocks outbound ports 25/587, so use 465.
+
 **Routing and auth.** Routes are in `src/App.tsx`. Every route except `/login` is wrapped in `ProtectedRoute` (uses `useAuth`, which is Supabase session state). The list pages are wrapped in `<Layout>` in `App.tsx`, while report form/view pages render `<Layout>` themselves.
 
 **Theme and buttons.** The shadcn theme tokens live in `src/index.css` (primary = the app's blue-600, plus custom `success`/`warning` tokens). Use the tokens instead of hard-coded colors on shadcn components. `Button` variants by meaning: `success` for confirm/create (Guardar, Agregar, Nuevo…), `destructive` for Eliminar, `default` (blue) for main neutral actions (Buscar, Descargar PDF), `outline` for Cancelar/Limpiar, `ghost` for Volver and toolbar actions, `warning` for non-destructive actions that need attention. Dark-mode tokens exist under `.dark`, but nothing toggles that class yet.
