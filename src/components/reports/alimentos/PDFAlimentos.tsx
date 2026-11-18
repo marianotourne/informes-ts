@@ -65,6 +65,7 @@ const styles = StyleSheet.create({
   resultadosBase: { position: "relative" },
   // Exponent laid out inline after the 10, raised like a superscript
   potencia: { flexDirection: "row", alignItems: "flex-start" },
+  textoIndicativo: { width: "400px", margin: "10px auto 0", fontSize: 7 },
   resultadosExponente: { fontSize: 6, marginTop: -2, marginLeft: -0.5 },
   pieFirma: { marginLeft: "350px", fontSize: 9 },
 });
@@ -262,7 +263,9 @@ export const PDFAlimentos = ({
                 <TR>
                   <TD style={styles.columnaTitulo}>
                     {/* Extra space: the italic "i" leans into the "(" */}
-                    <Text style={{ fontStyle: "italic" }}>Escherichia coli </Text>
+                    <Text style={{ fontStyle: "italic" }}>
+                      Escherichia coli{" "}
+                    </Text>
                     <Text>{unidadRecuento(r.escherichia)}</Text>
                   </TD>
                   <TD style={styles.demasColumnas}>
@@ -345,6 +348,7 @@ export const PDFAlimentos = ({
                 </TR>
               ))}
             </Table>
+
             {food.observaciones && (
               <View>
                 <Text
@@ -358,6 +362,30 @@ export const PDFAlimentos = ({
                 </Text>
               </View>
             )}
+            <View style={styles.textoIndicativo}>
+              <Text>Aerobios mesófilos - ISO 4833-1:2013 Rto. en placa.</Text>
+              <Text>
+                Coliformes totales - ISO 4832:2006 / FIL 73A 1985 Rto. en placa.
+              </Text>
+              <Text>
+                Coliformes fecales - ISO 16649-2 Rto. en medio cromogénico.
+              </Text>
+              <Text>
+                <Text style={{ fontStyle: "italic" }}>Escherichia coli </Text>-
+                ISO 16649-2 Rto. en medio cromogénico.
+              </Text>
+              <Text>Mohos y levaduras - ISO 21527:2008 Rto. en placa.</Text>
+              <Text>
+                Estafilococos aureus coagulasa positivo - ISO 6888-3:2004 / FIL
+                145:1990 Rto en placa.
+              </Text>
+              <Text>Sulfito reductores - ISO 15213:2003 Rto. en placa.</Text>
+              <Text>
+                <Text style={{ fontStyle: "italic" }}>Salmonella</Text> spp -
+                ISO 6579:2002 Presencia/Ausencia
+              </Text>
+              <Text>Ácido lácticas - ISO 15214:1998 Rto. en placa.</Text>
+            </View>
           </View>
         </View>
 
