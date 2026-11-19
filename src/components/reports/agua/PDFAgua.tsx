@@ -71,6 +71,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   pieFirma: { marginLeft: "350px", fontSize: 9 },
+  textoIndicativo: { width: "400px", margin: "10px auto 0", fontSize: 7 },
 });
 
 const formatDate = (value?: string | null) => {
@@ -144,12 +145,12 @@ export const PDFAgua = ({
         </Table>
 
         <View style={styles.texto}>
-          <Text style={{ marginBottom: 12 }}>
+          <Text style={{ marginBottom: 2 }}>
             Se realizaron determinaciones de rutina según Art. 982 del Código
             Alimentario Argentino, desarrolladas en Laboratorio Horizonte (Las
             Heras 615 - Tandil).
           </Text>
-          <Text style={{ marginBottom: 12 }}>
+          {/* <Text style={{ marginBottom: 12 }}>
             <Text style={{ fontWeight: "bold" }}>Metodología empleada: </Text>
             Recuento de microorganismos aerobios en placa. Recuento de
             coliformes totales, coliformes fecales y{" "}
@@ -158,7 +159,7 @@ export const PDFAgua = ({
             <Text style={{ fontStyle: "italic" }}>Pseudomona aeruginosa:</Text>{" "}
             Estandar Methods for the Examination of Water y Wasterwater 21st
             Edition (2005).
-          </Text>
+          </Text> */}
         </View>
 
         <View style={styles.resultados}>
@@ -357,6 +358,14 @@ export const PDFAgua = ({
             </TR>
           </Table>
         )}
+
+        <View style={styles.textoIndicativo}>
+          <Text>Aerobios mesofilos - APHA 9215-B Rto. en placa</Text>
+          <Text>Coliformes totales - ISO 9308-2 NMP</Text>
+          <Text>Coliformes fecales - NMP ISO 9308-2</Text>
+          <Text>Escherichia coli - NMP ISO 9308-2</Text>
+          <Text>Pseudomona aeruginosa - ISO 16266-2:2018 NMP</Text>
+        </View>
 
         <View>
           <View style={styles.texto}>
