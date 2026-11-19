@@ -349,19 +349,6 @@ export const PDFAlimentos = ({
               ))}
             </Table>
 
-            {food.observaciones && (
-              <View>
-                <Text
-                  style={{
-                    marginLeft: "30px",
-                    fontStyle: "italic",
-                    fontSize: 9,
-                  }}
-                >
-                  {food.observaciones}
-                </Text>
-              </View>
-            )}
             <View style={styles.textoIndicativo}>
               <Text>Aerobios mesófilos - ISO 4833-1:2013 Rto. en placa.</Text>
               <Text>
@@ -377,7 +364,7 @@ export const PDFAlimentos = ({
               <Text>Mohos y levaduras - ISO 21527:2008 Rto. en placa.</Text>
               <Text>
                 Estafilococos aureus coagulasa positivo - ISO 6888-3:2004 / FIL
-                145:1990 Rto en placa.
+                145:1990 Rto. en placa.
               </Text>
               <Text>Sulfito reductores - ISO 15213:2003 Rto. en placa.</Text>
               <Text>
@@ -386,6 +373,19 @@ export const PDFAlimentos = ({
               </Text>
               <Text>Ácido lácticas - ISO 15214:1998 Rto. en placa.</Text>
             </View>
+            {food.observaciones && (
+              <View>
+                <Text
+                  style={{
+                    marginLeft: "30px",
+                    fontStyle: "italic",
+                    fontSize: 9,
+                  }}
+                >
+                  {food.observaciones}
+                </Text>
+              </View>
+            )}
           </View>
         </View>
 
