@@ -373,11 +373,13 @@ export const PDFAlimentos = ({
               </Text>
               <Text>Ácido lácticas - ISO 15214:1998 Rto. en placa.</Text>
             </View>
+
             {food.observaciones && (
               <View>
                 <Text
                   style={{
                     marginLeft: "30px",
+                    marginTop: "20px",
                     fontStyle: "italic",
                     fontSize: 9,
                   }}
@@ -390,6 +392,13 @@ export const PDFAlimentos = ({
         </View>
 
         <View>
+          <View style={styles.texto}>
+            <Text>
+              Los análisis fueron realizados sobre la muestra recibida del
+              cliente, el laboratorio no se hace responsable por la toma de
+              muestra ni de su identificación.-
+            </Text>
+          </View>
           <View style={styles.texto}>
             <Text>Tandil, {fechaInforme}</Text>
           </View>

@@ -91,7 +91,8 @@ const formatDate = (value?: string | null) => {
   return parsed.format("DD/MM/YYYY");
 };
 
-const hasValue = (value?: number | null) => value !== null && value !== undefined;
+const hasValue = (value?: number | null) =>
+  value !== null && value !== undefined;
 
 // A missing value or 0 is printed as "-"
 const formatValor = (value?: number | null) =>
@@ -252,7 +253,11 @@ export const PDFNutricion = ({
                 <TR>
                   <TD style={styles.columnaTitulo}>
                     <Image
-                      style={{ height: "12px", width: "8px", marginRight: "4px" }}
+                      style={{
+                        height: "12px",
+                        width: "8px",
+                        marginRight: "4px",
+                      }}
                       src={delta}
                     />
                     pH
@@ -292,7 +297,7 @@ export const PDFNutricion = ({
             <Text>
               Los análisis fueron realizados sobre la muestra recibida del
               cliente, el laboratorio no se hace responsable por la toma de
-              muestra.-
+              muestra ni de su identificación.-
             </Text>
           </View>
           <View style={styles.texto}>
