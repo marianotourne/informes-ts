@@ -32,6 +32,7 @@ import { ConfirmDialog } from "./ConfirmDialog";
 import {
   SendReportEmailDialog,
   type ReportEmailDraft,
+  type ReportEmailItem,
 } from "./SendReportEmailDialog";
 import { TablePagination } from "./TablePagination";
 import { DatePicker } from "./DatePicker";
@@ -321,22 +322,27 @@ export function Reports() {
   const handleOpenEmail = (item: FullReport) => {
     const email = getClientEmail(item.report.client_id);
     if (!email) return;
-    const clientName = getClientName(item.report.client_id);
-    const { document: pdfDocument, filename } = getPdf(item, clientName);
-    const tipo = getReportTypeLabel(item.type);
-    const numero = getReportNumber(item);
-    const detalle = getDetail(item).detalle;
+    const clientId = item.report.client_id;
+    const clientName = getClientName(clientId);
 
-    setEmailDraft({
-      para: email,
-      asunto: `Informe de análisis de ${tipo} N° ${numero}`,
-      cuerpo:
-        `Estimados/as:\n\nAdjuntamos el informe de análisis de ${tipo} N° ${numero}` +
-        (detalle ? ` (${detalle})` : "") +
-        ".\n\nSaludos cordiales.",
-      pdfFilename: filename,
-      buildPdf: () => pdf(pdfDocument).toBlob(),
-    });
+    // Todos los informes del cliente, para poder sumar varios en el mismo mail
+    const informes: ReportEmailItem[] = (reportsQuery.data ?? [])
+      .filter((r) => r.report.client_id === clientId)
+      .sort(compareDefault)
+      .map((r) => {
+        const { document: pdfDocument, filename } = getPdf(r, clientName);
+        return {
+          id: r.report.id,
+          tipo: getReportTypeLabel(r.type),
+          numero: String(getReportNumber(r)),
+          detalle: getDetail(r).detalle || "",
+          fecha: formatDate(getReportDate(r)),
+          pdfFilename: filename,
+          buildPdf: () => pdf(pdfDocument).toBlob(),
+        };
+      });
+
+    setEmailDraft({ para: email, initialId: item.report.id, informes });
     setEmailOpen(true);
   };
 
