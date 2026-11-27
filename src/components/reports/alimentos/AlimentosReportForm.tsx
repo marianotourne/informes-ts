@@ -132,7 +132,7 @@ export function AlimentosReportForm() {
   }, [isEditMode, methods]);
 
   const handleBack = () => {
-    navigate("/");
+    navigate("/reports");
   };
 
   const onSubmit = async (data: AlimentosReportFormData) => {
@@ -153,7 +153,7 @@ export function AlimentosReportForm() {
         });
         methods.reset();
       }
-      navigate("/");
+      navigate("/reports");
     } catch (error) {
       toast({
         title: "Error",

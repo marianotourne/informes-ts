@@ -5,6 +5,7 @@ import { ResetPassword } from "./components/ResetPassword";
 import { SignUp } from "./components/SignUp";
 import { Layout } from "./components/Layout";
 import { Reports } from "./components/Reports";
+import { Home } from "./components/Home";
 import { Clients } from "./components/Clients";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import { AguaReportForm } from "./components/reports/agua/AguaReportForm";
@@ -27,6 +28,17 @@ function App() {
 
         <Route
           path="/"
+          element={
+            <ProtectedRoute>
+              <Layout>
+                <Home />
+              </Layout>
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/reports"
           element={
             <ProtectedRoute>
               <Layout>

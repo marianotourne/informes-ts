@@ -37,6 +37,11 @@
   --border: oklch(0.922 0 0);
   --input: oklch(0.87 0 0);
   --ring: oklch(0.623 0.214 259.815);
+  /* Gráficos del dashboard: un color fijo por tipo de informe + gris para el año anterior */
+  --chart-agua: #257de0;
+  --chart-alimentos: #f47230;
+  --chart-nutricion: #00b894;
+  --chart-anterior: #a3a3a3;
 }
 
 .dark {
@@ -62,6 +67,10 @@
   --border: oklch(1 0 0 / 10%);
   --input: oklch(1 0 0 / 15%);
   --ring: oklch(0.546 0.245 262.881);
+  --chart-agua: #338ced;
+  --chart-alimentos: #e76624;
+  --chart-nutricion: #00a888;
+  --chart-anterior: #737373;
 }
 
 @theme inline {
@@ -88,6 +97,10 @@
   --color-success-foreground: var(--success-foreground);
   --color-warning: var(--warning);
   --color-warning-foreground: var(--warning-foreground);
+  --color-chart-agua: var(--chart-agua);
+  --color-chart-alimentos: var(--chart-alimentos);
+  --color-chart-nutricion: var(--chart-nutricion);
+  --color-chart-anterior: var(--chart-anterior);
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);

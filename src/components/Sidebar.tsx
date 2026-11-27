@@ -1,5 +1,6 @@
 import {
   FileText,
+  LayoutDashboard,
   Users,
   LogOut,
   PanelLeftClose,
@@ -81,7 +82,8 @@ export function Sidebar({
   const location = useLocation();
 
   const menuItems = [
-    { path: "/", label: "Informes", icon: FileText, soloInternos: false },
+    { path: "/", label: "Inicio", icon: LayoutDashboard, soloInternos: true },
+    { path: "/reports", label: "Informes", icon: FileText, soloInternos: false },
     { path: "/clients", label: "Clientes", icon: Users, soloInternos: true },
   ].filter((item) => isInterno || !item.soloInternos);
 

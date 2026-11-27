@@ -132,3 +132,38 @@ export type FullReport =
   | FullWaterReport
   | FullFoodReport
   | FullNutritionReport;
+
+// Resultado de la función SQL dashboard_stats(anio) (supabase/dashboard_stats.sql)
+export interface DashboardStats {
+  anio: number;
+  anios: number[];
+  total: number;
+  total_anterior_mismo_periodo: number;
+  clientes_atendidos: number;
+  por_tipo: Array<{ report_type_id: number; cantidad: number }>;
+  por_mes: Array<{
+    mes: number; // 1-12
+    agua: number;
+    alimentos: number;
+    nutricion: number;
+    total: number;
+    total_anterior: number;
+  }>;
+  ranking_clientes: Array<{
+    client_id: string;
+    nombre: string;
+    cantidad: number;
+    puesto: number; // 1 = más informes; el cliente filtrado puede venir fuera del top 10
+  }>;
+  demora: {
+    promedio: number | null; // días
+    mediana: number | null;
+    informes: number;
+    por_tipo: Array<{ report_type_id: number; promedio: number; informes: number }>;
+  };
+  por_usuario: Array<{
+    user_id: string | null; // null = informes sin usuario registrado
+    nombre: string;
+    cantidad: number;
+  }>;
+}

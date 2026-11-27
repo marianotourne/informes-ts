@@ -103,7 +103,7 @@ export function ReportView({
           <div className="flex items-center gap-2 md:gap-4 min-w-0">
             <Button
               variant="ghost"
-              onClick={() => navigate("/")}
+              onClick={() => navigate("/reports")}
               className="flex items-center gap-2 shrink-0 px-2 md:px-4"
               title="Volver"
             >

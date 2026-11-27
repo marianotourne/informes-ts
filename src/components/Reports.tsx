@@ -1,4 +1,4 @@
-import { useState, useRef, useMemo, useCallback } from "react";
+import { useState, useRef, useMemo, useCallback, useEffect } from "react";
 import {
   ArrowDown,
   ArrowUp,
@@ -6,6 +6,7 @@ import {
   ChevronDown,
   Search,
   SlidersHorizontal,
+  X,
 } from "lucide-react";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
@@ -16,7 +17,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "./ui/select";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import type { Client, FullReport, ReportType } from "@/types/types";
 import { deleteReport, fetchAllReports } from "@/api/reportsApi";
@@ -60,6 +61,8 @@ type SearchFilters = {
   fechaDesde: string;
   fechaHasta: string;
   tipo: ReportType | "";
+  // profiles.id de quien cargó el informe; solo llega desde el dashboard (no tiene campo propio)
+  creadoPor: string;
 };
 
 const emptyFilters: SearchFilters = {
@@ -67,6 +70,20 @@ const emptyFilters: SearchFilters = {
   fechaDesde: "",
   fechaHasta: "",
   tipo: "",
+  creadoPor: "",
+};
+
+// Filtros que manda el dashboard por la URL ("Ver estos informes"); null si no vino ninguno
+const filtersFromParams = (params: URLSearchParams): SearchFilters | null => {
+  const tipo = params.get("tipo");
+  const filters: SearchFilters = {
+    client: params.get("cliente") ?? "",
+    fechaDesde: params.get("desde") ?? "",
+    fechaHasta: params.get("hasta") ?? "",
+    tipo: reportTypes.some((t) => t.value === tipo) ? (tipo as ReportType) : "",
+    creadoPor: params.get("creadoPor") ?? "",
+  };
+  return Object.values(filters).some(Boolean) ? filters : null;
 };
 
 const getReportTypeLabel = (type: ReportType) =>
@@ -248,6 +265,10 @@ const filterReports = (
       if (filters.tipo !== item.type) return false;
     }
 
+    if (filters.creadoPor && item.report.created_by !== filters.creadoPor) {
+      return false;
+    }
+
     const reportDate = getReportDate(item);
 
     if (filters.fechaDesde && reportDate < filters.fechaDesde) return false;
@@ -261,11 +282,22 @@ export function Reports() {
   const navigate = useNavigate();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
-  const [searchFilters, setSearchFilters] =
-    useState<SearchFilters>(emptyFilters);
-  const [appliedFilters, setAppliedFilters] = useState<SearchFilters | null>(
-    null,
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [searchFilters, setSearchFilters] = useState<SearchFilters>(
+    () => filtersFromParams(searchParams) ?? emptyFilters,
   );
+  const [appliedFilters, setAppliedFilters] = useState<SearchFilters | null>(
+    () => filtersFromParams(searchParams),
+  );
+  // Nombre para el chip del filtro por usuario (el filtro guarda solo el id)
+  const [creadoPorNombre] = useState(
+    () => searchParams.get("creadoPorNombre") ?? "",
+  );
+
+  // Una vez leídos, sacar los filtros de la URL para que "Limpiar" o recargar no los traigan de vuelta
+  useEffect(() => {
+    if (searchParams.size > 0) setSearchParams({}, { replace: true });
+  }, [searchParams, setSearchParams]);
 
   const { clientsQuery } = useClients();
   const { isInterno } = useProfile();
@@ -377,6 +409,12 @@ export function Reports() {
     setPage(1);
     // En el celular, plegar los filtros para que se vea la lista
     setShowFilters(false);
+  };
+
+  const handleClearCreadoPor = () => {
+    setSearchFilters((prev) => ({ ...prev, creadoPor: "" }));
+    setAppliedFilters((prev) => (prev ? { ...prev, creadoPor: "" } : prev));
+    setPage(1);
   };
 
   const handleClearSearch = () => {
@@ -755,6 +793,22 @@ export function Reports() {
             </Button>
           </div>
         </div>
+
+        {appliedFilters?.creadoPor && (
+          <div className="mt-4 flex items-center gap-2 text-sm">
+            <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 text-primary font-medium pl-3 pr-1 py-1">
+              Cargados por {creadoPorNombre || "un usuario"}
+              <button
+                type="button"
+                onClick={handleClearCreadoPor}
+                title="Quitar filtro"
+                className="rounded-full p-0.5 hover:bg-primary/20"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            </span>
+          </div>
+        )}
       </div>
 
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">

@@ -125,7 +125,7 @@ export function NutricionReportForm() {
   }, [isEditMode, methods]);
 
   const handleBack = () => {
-    navigate("/");
+    navigate("/reports");
   };
 
   const onSubmit = async (data: NutricionReportFormData) => {
@@ -147,7 +147,7 @@ export function NutricionReportForm() {
         });
         methods.reset();
       }
-      navigate("/");
+      navigate("/reports");
     } catch (error) {
       toast({
         title: "Error",

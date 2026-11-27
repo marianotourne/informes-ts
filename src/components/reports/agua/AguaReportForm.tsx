@@ -133,7 +133,7 @@ export function AguaReportForm() {
   }, [isEditMode, methods]);
 
   const handleBack = () => {
-    navigate("/");
+    navigate("/reports");
   };
 
   const onSubmit = async (data: AguaReportFormData) => {
@@ -153,7 +153,7 @@ export function AguaReportForm() {
         });
         methods.reset();
       }
-      navigate("/");
+      navigate("/reports");
     } catch (error) {
       toast({
         title: "Error",
